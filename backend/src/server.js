@@ -6,6 +6,7 @@ import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express";
 import { functions, inngest } from "./config/inngest.js";
 import adminRoutes from "./routes/admin.route.js";
+import usersRoutes from "./routes/user.route.js";
 
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(clerkMiddleware());// request authentication middleware
 app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.use("/api/admin",adminRoutes);// Admin routes
+app.use("/api/users",usersRoutes);// Users routes
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
