@@ -7,7 +7,7 @@ import { serve } from "inngest/express";
 import { functions, inngest } from "./config/inngest.js";
 import adminRoutes from "./routes/admin.route.js";
 import usersRoutes from "./routes/user.route.js";
-
+import ordersRoutes from "./routes/order.route.js";
 
 const app = express();
 const __dirname = path.resolve();
@@ -19,6 +19,7 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.use("/api/admin",adminRoutes);// Admin routes
 app.use("/api/users",usersRoutes);// Users routes
+app.use("/api/orders",ordersRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
