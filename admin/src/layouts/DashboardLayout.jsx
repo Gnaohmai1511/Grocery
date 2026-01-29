@@ -8,6 +8,6 @@ function DashboardLayout() {
     <Outlet />
   </div>
 
-  )
+  );
 }
 export default DashboardLayout;
