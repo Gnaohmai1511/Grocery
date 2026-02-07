@@ -4,34 +4,38 @@ module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {
-      colors: {
-        primary: {
-          DEFAULT: "#1DB954", // spotify green
-          light: "#1ED760",
-          dark: "#1AA34A",
-        },
-        background: {
-          DEFAULT: "#121212", // dark background
-          light: "#181818",
-          lighter: "#282828",
-        },
-        surface: {
-          DEFAULT: "#282828",
-          light: "#3E3E3E",
-        },
-        text: {
-          primary: "#FFFFFF",
-          secondary: "#B3B3B3",
-          tertiary: "#6A6A6A",
-        },
-        accent: {
-          DEFAULT: "#1DB954",
-          red: "#F44336",
-          yellow: "#FFC107",
-        },
+  extend: {
+    colors: {
+      primary: {
+        DEFAULT: "#6F4E37", // coffee brown
+        light: "#A1866F",   // latte
+        dark: "#4B3621",    // dark roast
+      },
+
+      background: {
+        DEFAULT: "#F7F3EE", // milk / cream background
+        light: "#EFE6D8",   // latte foam
+        lighter: "#FFFFFF",
+      },
+
+      surface: {
+        DEFAULT: "#FFFFFF", // card / modal
+        light: "#F3ECE3",   // elevated surface
+      },
+
+      text: {
+        primary: "#3B2F2F",   // dark coffee text
+        secondary: "#6F4E37", // coffee brown
+        tertiary: "#9C8A7E",  // muted coffee
+      },
+
+      accent: {
+        DEFAULT: "#C8A165", // caramel
+        red: "#C2412D",     // warm red
+        yellow: "#E3B261",  // honey
       },
     },
   },
+},
   plugins: [],
 };
