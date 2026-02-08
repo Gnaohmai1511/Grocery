@@ -117,7 +117,7 @@ const ProductsGrid = ({ products, isLoading, isError }: ProductsGridProps) => {
   if (isError) {
     return (
       <View className="py-20 items-center justify-center">
-        <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
+        <Ionicons name="alert-circle-outline" size={48} color="#C8A165" />
         <Text className="text-text-primary font-semibold mt-4">Failed to load products</Text>
         <Text className="text-text-secondary text-sm mt-2">Please try again later</Text>
       </View>
