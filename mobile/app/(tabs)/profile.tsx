@@ -19,7 +19,7 @@ const ProfileScreen = () => {
   const { user } = useUser();
 
   const handleMenuPress = (action: (typeof MENU_ITEMS)[number]["action"]) => {
-    // router.push(action);
+     router.push(action);
   };
 
   return (
