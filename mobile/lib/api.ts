@@ -3,8 +3,9 @@ import axios from "axios";
 import { useEffect } from "react";
 
 // localhost will work in simulator
-const API_URL = "http://192.168.101.11:5000/api";
-
+//const API_URL = "http://192.168.101.11:5000/api";
+// ở cty
+const API_URL = "http://192.168.1.50:5000/api";
 
 //const API_URL = "https://grocery-cdim.onrender.com/api"
 
