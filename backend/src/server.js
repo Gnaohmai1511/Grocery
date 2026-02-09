@@ -16,18 +16,14 @@ import paymentRoutes from "./routes/payment.route.js";
 
 const app = express();
 const __dirname = path.resolve();
-// add
-app.use(
-  "/api/payment",
-  (req, res, next) => {
-    if (req.originalUrl === "/api/payment/webhook") {
-      express.raw({ type: "application/json" })(req, res, next);
-    } else {
-      express.json()(req, res, next); // parse json for non-webhook routes
-    }
-  },
-  paymentRoutes
-);
+
+app.use("/api/payment", (req,res,next) =>{
+  if(req.originalUrl === '/api/payment/webhook'){
+    express.raw({type: 'application/json'})(req,res, next);
+  } else {
+    express.json()(req,res,next);
+  }
+} , paymentRoutes);
 
 app.use(express.json());
 app.use(clerkMiddleware());// request authentication middleware
@@ -42,7 +38,6 @@ app.use("/api/reviews",reviewsRoutes);
 app.use("/api/products",productsRoutes);
 app.use("/api/cart",cartRoutes);
 
-// /api/payment/webhook
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
