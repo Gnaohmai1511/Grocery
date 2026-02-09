@@ -30,8 +30,6 @@ export interface Address {
   fullName: string;
   streetAddress: string;
   city: string;
-  state: string;
-  zipCode: string;
   phoneNumber: string;
   isDefault: boolean;
 }
@@ -45,8 +43,6 @@ export interface Order {
     fullName: string;
     streetAddress: string;
     city: string;
-    state: string;
-    zipCode: string;
     phoneNumber: string;
   };
   paymentResult: {

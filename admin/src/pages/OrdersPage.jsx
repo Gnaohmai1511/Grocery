@@ -75,7 +75,7 @@ function OrdersPage() {
                         <td>
                           <div className="font-medium">{order.shippingAddress.fullName}</div>
                           <div className="text-sm opacity-60">
-                            {order.shippingAddress.city}, {order.shippingAddress.state}
+                            {order.shippingAddress.city},
                           </div>
                         </td>
 

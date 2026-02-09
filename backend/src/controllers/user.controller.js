@@ -2,12 +2,12 @@ import { User } from "../models/user.model.js";
 
 export async function addAddress(req, res) {
   try {
-    const { label, fullName, streetAddress, city, state, zipCode, phoneNumber, isDefault } =
+    const { label, fullName, streetAddress, city, phoneNumber, isDefault } =
       req.body;
 
     const user = req.user;
 
-    if (!fullName || !streetAddress || !city || !state || !zipCode) {
+    if (!fullName || !streetAddress || !city) {
       return res.status(400).json({ error: "Missing required address fields" });
     }
 
@@ -23,8 +23,6 @@ export async function addAddress(req, res) {
       fullName,
       streetAddress,
       city,
-      state,
-      zipCode,
       phoneNumber,
       isDefault: isDefault || false,
     });
@@ -51,7 +49,7 @@ export async function getAddresses(req, res) {
 
 export async function updateAddress(req, res) {
   try {
-    const { label, fullName, streetAddress, city, state, zipCode, phoneNumber, isDefault } =
+    const { label, fullName, streetAddress, city, phoneNumber, isDefault } =
       req.body;
 
     const { addressId } = req.params;
@@ -73,8 +71,6 @@ export async function updateAddress(req, res) {
     address.fullName = fullName || address.fullName;
     address.streetAddress = streetAddress || address.streetAddress;
     address.city = city || address.city;
-    address.state = state || address.state;
-    address.zipCode = zipCode || address.zipCode;
     address.phoneNumber = phoneNumber || address.phoneNumber;
     address.isDefault = isDefault !== undefined ? isDefault : address.isDefault;
 
