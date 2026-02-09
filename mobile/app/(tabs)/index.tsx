@@ -92,7 +92,7 @@ const ShopScreen = () => {
                     <Ionicons
                       name={category.icon}
                       size={36}
-                      color={isSelected ? "#121212" : "#fff"}
+                      color={isSelected ? "#fff" : "#121212"}
                     />
                   ) : (
                     <Image source={category.image} className="size-12" resizeMode="contain" />
