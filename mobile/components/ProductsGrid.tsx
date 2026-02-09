@@ -44,7 +44,12 @@ const ProductsGrid = ({ products, isLoading, isError }: ProductsGridProps) => {
       className="bg-surface rounded-3xl overflow-hidden mb-3"
       style={{ width: "48%" }}
       activeOpacity={0.8}
-    //   onPress={() => router.push(`/product/${product._id}`)}
+      onPress={() => router.push(
+        {
+           pathname: "/product/[id]",
+           params: { id: product._id },
+        }
+      )}
     >
       <View className="relative">
         <Image
