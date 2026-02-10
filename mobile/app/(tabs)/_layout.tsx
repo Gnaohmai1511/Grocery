@@ -49,7 +49,17 @@ const TabsLayout = () => {
           ),
         }}
       />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chatbot",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="logo-android" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
+    
   );
 };
 
