@@ -9,8 +9,11 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": {"buildType": "apk" }
-
+      "android": {"buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_ZWxlY3RyaWMtd2VldmlsLTguY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51SymVgHUiL5ssE14ZrtiYtfQa87oaUw8y774xNYqUSyLiaDBHPzjuIJGlDanfS2nFD2eMxEQ0GalCmCULMahgnzb00Z8dBEphV"
+      }
     },
     "production": {
       "autoIncrement": true
