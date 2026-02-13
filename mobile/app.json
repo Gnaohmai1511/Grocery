@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Grocery",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "icon": "./assets/images/appIcon.png",
+    "scheme": "grocery",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
