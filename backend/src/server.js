@@ -14,7 +14,7 @@ import productsRoutes from "./routes/product.route.js";
 import cartRoutes from "./routes/cart.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import aiRoutes from "./routes/ai.route.js";
-
+import notificationRoutes from "./routes/notification.route.js";
 const app = express();
 const __dirname = path.resolve();
 
@@ -39,7 +39,7 @@ app.use("/api/reviews",reviewsRoutes);
 app.use("/api/products",productsRoutes);
 app.use("/api/cart",cartRoutes);
 app.use("/api/ai", aiRoutes);
-
+app.use("/api/notifications", notificationRoutes);
 
 
 app.get("/api/health", (req, res) => {

@@ -47,7 +47,11 @@ export default function ChatScreen() {
         ...prev,
         { role: "assistant", content: res.answer },
       ]);
-    } catch {
+    } catch(error: any) {
+        console.error("❌ AI CHAT ERROR FULL:", error);
+        console.error("❌ ERROR MESSAGE:", error?.message);
+        console.error("❌ RESPONSE DATA:", error?.response?.data);
+        console.error("❌ STATUS:", error?.response?.status);
       setMessages(prev => [
         ...prev,
         {

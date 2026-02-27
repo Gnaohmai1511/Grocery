@@ -8,11 +8,16 @@ import { Chat } from "../models/chat.model.js";
 export const askAI = async (req, res) => {
   try {
     const { prompt, clerkId, chatId } = req.body;
-    if (!prompt?.trim()) {
+
+    console.log("ASK AI INPUT:", { prompt, clerkId, chatId });
+
+    if (!prompt || !prompt.trim()) {
       return res.status(400).json({ error: "Thiếu câu hỏi" });
     }
 
-    // 1️⃣ Lấy dữ liệu user
+    /* =========================
+       LẤY DỮ LIỆU NGƯỜI DÙNG
+    ========================= */
     const user = await User.findOne({ clerkId });
     const orders = await Order.find({ clerkId }).limit(3);
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
@@ -20,7 +25,56 @@ export const askAI = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // 2️⃣ SYSTEM PROMPT – CHỐNG LẠC ĐỀ
+    /* =========================
+       LẤY CHAT & LỊCH SỬ
+    ========================= */
+    let chat = null;
+    let previousMessages = "";
+
+    if (chatId) {
+      chat = await Chat.findById(chatId);
+
+      if (chat?.messages?.length) {
+        previousMessages = chat.messages
+          .slice(-10)
+          .map((m) =>
+            m.role === "user"
+              ? `Người dùng: ${m.content}`
+              : `AI: ${m.content}`
+          )
+          .join("\n");
+      }
+    }
+
+   /* =========================
+   TÌM SẢN PHẨM ĐÃ TƯ VẤN (FIX)
+========================= */
+let lastMentionedProduct = null;
+
+if (chat?.messages?.length) {
+  const products = await Product.find({}, "name price stock category description averageRating");
+
+  for (let i = chat.messages.length - 1; i >= 0; i--) {
+    const msg = chat.messages[i];
+
+    if (msg.role !== "assistant") continue;
+
+    for (const product of products) {
+      if (
+        msg.content.toLowerCase().includes(product.name.toLowerCase())
+      ) {
+        lastMentionedProduct = product;
+        break;
+      }
+    }
+
+    if (lastMentionedProduct) break;
+  }
+}
+
+    /* =========================
+       SYSTEM PROMPT
+    ========================= */
     const systemPrompt = `
 Bạn là AI chatbot của ứng dụng Ecommerce tên là "Grocery".
 
@@ -42,41 +96,71 @@ Bạn là AI chatbot của ứng dụng Ecommerce tên là "Grocery".
    - Kiến thức chung không liên quan Ecommerce
 
 3. Nếu câu hỏi KHÔNG liên quan Grocery:
-   → Trả lời đúng 1 câu:
-   "Mình chỉ có thể hỗ trợ các câu hỏi về sản phẩm, đơn hàng và mua sắm trong ứng dụng Grocery 🛒"
+→ Trả lời đúng 1 câu:
+"Mình chỉ có thể hỗ trợ các câu hỏi về sản phẩm, đơn hàng và mua sắm trong ứng dụng Grocery 🛒"
 
 4. KHÔNG bịa thông tin. Chỉ dùng dữ liệu bên dưới.
 5. Trả lời ngắn gọn, thân thiện, bằng tiếng Việt.
 
+6. Nếu người dùng hỏi tiếp (ví dụ: "cái này", "sản phẩm đó", "mua cái lúc nãy"),
+hãy dựa vào lịch sử hội thoại và sản phẩm đã tư vấn gần nhất để trả lời.
+
+7. Nếu KHÔNG có sản phẩm trước đó mà người dùng hỏi mơ hồ,
+hãy yêu cầu người dùng nói rõ tên sản phẩm.
+
 === THÔNG TIN NGƯỜI DÙNG ===
 Email: ${user?.email || "Guest"}
 Số đơn hàng gần đây: ${orders.length}
-Số sản phẩm trong giỏ: ${cart?.items.length || 0}
+Số sản phẩm trong giỏ: ${cart?.items?.length || 0}
 
 === SẢN PHẨM MỚI ===
-${newProducts.map(p => `- ${p.name}: ${p.price}đ`).join("\n")}
+${newProducts.map((p) => `- ${p.name}: ${p.price}đ`).join("\n")}
 
-=== CÂU HỎI NGƯỜI DÙNG ===
+=== SẢN PHẨM ĐÃ TƯ VẤN TRƯỚC ĐÓ ===
+${
+  lastMentionedProduct
+    ? `
+Tên: ${lastMentionedProduct.name}
+Giá: ${lastMentionedProduct.price}đ
+Danh mục: ${lastMentionedProduct.category}
+Tồn kho: ${lastMentionedProduct.stock}
+Đánh giá: ${lastMentionedProduct.averageRating}/5
+Mô tả: ${lastMentionedProduct.description}
+`
+    : "Chưa có sản phẩm nào được tư vấn trước đó"
+}
+
+=== LỊCH SỬ HỘI THOẠI ===
+${previousMessages || "Chưa có hội thoại trước đó"}
+
+=== CÂU HỎI HIỆN TẠI ===
 "${prompt}"
 `;
 
-    // 3️⃣ Gọi Gemini (MODEL ĐÚNG)
+    console.log("SYSTEM PROMPT:\n", systemPrompt);
+
+    /* =========================
+       GỌI GEMINI
+    ========================= */
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent(systemPrompt);
     const answer = result.response.text().trim();
 
-    // 4️⃣ Lưu lịch sử chat
-    const chat = chatId
-      ? await Chat.findById(chatId)
-      : new Chat({
-          user: user?._id,
-          clerkId,
-          title: prompt.slice(0, 30),
-        });
+    console.log("AI ANSWER:", answer);
+
+    /* =========================
+       LƯU CHAT
+    ========================= */
+    if (!chat) {
+      chat = new Chat({
+        user: user?._id,
+        clerkId,
+        title: prompt.slice(0, 30),
+        messages: [],
+      });
+    }
 
     chat.messages.push(
       { role: "user", content: prompt },

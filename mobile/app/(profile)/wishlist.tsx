@@ -64,7 +64,7 @@ function WishlistScreen() {
           <TouchableOpacity
             className="bg-primary rounded-2xl px-8 py-4 mt-6"
             activeOpacity={0.8}
-            onPress={() => router.push("/(tabs)")}
+            onPress={() => router.push("../(protected)/(tabs)")}
           >
             <Text className="text-background font-bold text-base">Browse Products</Text>
           </TouchableOpacity>
