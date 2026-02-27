@@ -9,7 +9,7 @@ export default function SsoCallback() {
 
   useEffect(() => {
     if (isSignedIn) {
-      router.replace("/(tabs)");
+      router.replace("../(protected)/(tabs)");
     }
   }, [isSignedIn]);
 

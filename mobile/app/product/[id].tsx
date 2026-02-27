@@ -73,7 +73,7 @@ const ProductDetailScreen = () => {
             <Ionicons
               name={isInWishlist(product._id) ? "heart" : "heart-outline"}
               size={24}
-              color={isInWishlist(product._id) ? "#121212" : "#FFFFFF"}
+              color={isInWishlist(product._id) ? "#E53935" : "#FFFFFF"}
             />
           )}
         </TouchableOpacity>

@@ -2,7 +2,7 @@ import cloudinary from "../config/cloudinary.js";
 import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { User } from "../models/user.model.js";
-
+import { Notification } from "../models/notification.model.js";
 export async function createProduct(req, res) {
  try {
     const { name, description, price, stock, category } = req.body;
@@ -117,7 +117,7 @@ export async function updateOrderStatus(req, res) {
       return res.status(400).json({ error: "Invalid status" });
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate("user");
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -134,7 +134,22 @@ export async function updateOrderStatus(req, res) {
 
     await order.save();
 
-    res.status(200).json({ message: "Order status updated successfully", order });
+    // 🔔 TẠO THÔNG BÁO
+    await Notification.create({
+      user: order.user._id,
+      clerkId: order.clerkId,
+      order: order._id,
+      title: "Order status updated",
+      message:
+        status === "shipped"
+          ? "Your order has been shipped 🚚"
+          : "Your order has been delivered 📦",
+    });
+
+    res.status(200).json({
+      message: "Order status updated successfully",
+      order,
+    });
   } catch (error) {
     console.error("Error in updateOrderStatus controller:", error);
     res.status(500).json({ error: "Internal server error" });
