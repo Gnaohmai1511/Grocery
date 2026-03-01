@@ -8,10 +8,12 @@ export async function addAddress(req, res) {
     const user = req.user;
 
     if (!fullName || !streetAddress || !city) {
-      return res.status(400).json({ error: "Missing required address fields" });
+      return res.status(400).json({
+        error: "Thiếu thông tin bắt buộc của địa chỉ",
+      });
     }
 
-    // if this is set as default, unset all other defaults
+    // nếu đặt làm mặc định thì bỏ mặc định các địa chỉ khác
     if (isDefault) {
       user.addresses.forEach((addr) => {
         addr.isDefault = false;
@@ -29,10 +31,15 @@ export async function addAddress(req, res) {
 
     await user.save();
 
-    res.status(201).json({ message: "Address added successfully", addresses: user.addresses });
+    res.status(201).json({
+      message: "Thêm địa chỉ thành công",
+      addresses: user.addresses,
+    });
   } catch (error) {
     console.error("Error in addAddress controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
 
@@ -40,10 +47,14 @@ export async function getAddresses(req, res) {
   try {
     const user = req.user;
 
-    res.status(200).json({ addresses: user.addresses });
+    res.status(200).json({
+      addresses: user.addresses,
+    });
   } catch (error) {
     console.error("Error in getAddresses controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
 
@@ -56,11 +67,14 @@ export async function updateAddress(req, res) {
 
     const user = req.user;
     const address = user.addresses.id(addressId);
+
     if (!address) {
-      return res.status(404).json({ error: "Address not found" });
+      return res.status(404).json({
+        error: "Không tìm thấy địa chỉ",
+      });
     }
 
-    // if this is set as default, unset all other defaults
+    // nếu đặt làm mặc định thì bỏ mặc định các địa chỉ khác
     if (isDefault) {
       user.addresses.forEach((addr) => {
         addr.isDefault = false;
@@ -72,14 +86,20 @@ export async function updateAddress(req, res) {
     address.streetAddress = streetAddress || address.streetAddress;
     address.city = city || address.city;
     address.phoneNumber = phoneNumber || address.phoneNumber;
-    address.isDefault = isDefault !== undefined ? isDefault : address.isDefault;
+    address.isDefault =
+      isDefault !== undefined ? isDefault : address.isDefault;
 
     await user.save();
 
-    res.status(200).json({ message: "Address updated successfully", addresses: user.addresses });
+    res.status(200).json({
+      message: "Cập nhật địa chỉ thành công",
+      addresses: user.addresses,
+    });
   } catch (error) {
     console.error("Error in updateAddress controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
 
@@ -91,29 +111,42 @@ export async function deleteAddress(req, res) {
     user.addresses.pull(addressId);
     await user.save();
 
-    res.status(200).json({ message: "Address deleted successfully", addresses: user.addresses });
+    res.status(200).json({
+      message: "Xoá địa chỉ thành công",
+      addresses: user.addresses,
+    });
   } catch (error) {
     console.error("Error in deleteAddress controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
+
 export async function addToWishlist(req, res) {
   try {
     const { productId } = req.body;
     const user = req.user;
 
-    // check if product is already in the wishlist
+    // kiểm tra sản phẩm đã có trong wishlist chưa
     if (user.wishlist.includes(productId)) {
-      return res.status(400).json({ error: "Product already in wishlist" });
+      return res.status(400).json({
+        error: "Sản phẩm đã có trong danh sách yêu thích",
+      });
     }
 
     user.wishlist.push(productId);
     await user.save();
 
-    res.status(200).json({ message: "Product added to wishlist", wishlist: user.wishlist });
+    res.status(200).json({
+      message: "Đã thêm sản phẩm vào danh sách yêu thích",
+      wishlist: user.wishlist,
+    });
   } catch (error) {
     console.error("Error in addToWishlist controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
 
@@ -122,29 +155,40 @@ export async function removeFromWishlist(req, res) {
     const { productId } = req.params;
     const user = req.user;
 
-    // check if product is already in the wishlist
+    // kiểm tra sản phẩm có trong wishlist không
     if (!user.wishlist.includes(productId)) {
-      return res.status(400).json({ error: "Product not found in wishlist" });
+      return res.status(400).json({
+        error: "Sản phẩm không tồn tại trong danh sách yêu thích",
+      });
     }
 
     user.wishlist.pull(productId);
     await user.save();
 
-    res.status(200).json({ message: "Product removed from wishlist", wishlist: user.wishlist });
+    res.status(200).json({
+      message: "Đã xoá sản phẩm khỏi danh sách yêu thích",
+      wishlist: user.wishlist,
+    });
   } catch (error) {
     console.error("Error in removeFromWishlist controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }
 
 export async function getWishlist(req, res) {
   try {
-    // we're using populate, bc wishlist is just an array of product ids
+    // populate vì wishlist chỉ lưu id sản phẩm
     const user = await User.findById(req.user._id).populate("wishlist");
 
-    res.status(200).json({ wishlist: user.wishlist });
+    res.status(200).json({
+      wishlist: user.wishlist,
+    });
   } catch (error) {
     console.error("Error in getWishlist controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Lỗi máy chủ nội bộ",
+    });
   }
 }

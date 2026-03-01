@@ -35,23 +35,19 @@ interface AddressFormModalProps {
 }
 
 /* =======================
-   PHONE VALIDATION
+   KIỂM TRA SỐ ĐIỆN THOẠI
 ======================= */
 const validatePhoneNumber = (phone: string) => {
   if (!phone) return false;
 
-  // bỏ khoảng trắng
   let cleaned = phone.replace(/\s+/g, "");
 
-  // nếu bắt đầu bằng +84 → đổi thành 0
   if (cleaned.startsWith("+84")) {
     cleaned = "0" + cleaned.slice(3);
   }
 
-  // chỉ cho phép số
   if (!/^0\d+$/.test(cleaned)) return false;
 
-  // kiểm tra độ dài (VN: 9–10 số)
   if (cleaned.length < 9 || cleaned.length > 10) return false;
 
   return true;
@@ -69,14 +65,14 @@ const AddressFormModal = ({
 }: AddressFormModalProps) => {
   const handleSave = () => {
     if (!addressForm.phoneNumber.trim()) {
-      Alert.alert("Invalid phone number", "Phone number is required");
+      Alert.alert("Số điện thoại không hợp lệ", "Vui lòng nhập số điện thoại");
       return;
     }
 
     if (!validatePhoneNumber(addressForm.phoneNumber)) {
       Alert.alert(
-        "Invalid phone number",
-        "Phone number must have 9–10 digits and be valid"
+        "Số điện thoại không hợp lệ",
+        "Số điện thoại phải có 9–10 chữ số và đúng định dạng"
       );
       return;
     }
@@ -94,7 +90,7 @@ const AddressFormModal = ({
           {/* HEADER */}
           <View className="px-6 py-5 border-b border-surface flex-row items-center justify-between">
             <Text className="text-text-primary text-2xl font-bold">
-              {isEditing ? "Edit Address" : "Add New Address"}
+              {isEditing ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={28} color="#C8A165" />
@@ -109,10 +105,12 @@ const AddressFormModal = ({
             <View className="p-6">
               {/* LABEL */}
               <View className="mb-5">
-                <Text className="text-text-primary font-semibold mb-2">Label</Text>
+                <Text className="text-text-primary font-semibold mb-2">
+                  Nhãn địa chỉ
+                </Text>
                 <TextInput
                   className="bg-surface text-text-primary p-4 rounded-2xl"
-                  placeholder="Home, Work..."
+                  placeholder="Nhà, Công ty..."
                   placeholderTextColor="#666"
                   value={addressForm.label}
                   onChangeText={(text) =>
@@ -123,10 +121,12 @@ const AddressFormModal = ({
 
               {/* FULL NAME */}
               <View className="mb-5">
-                <Text className="text-text-primary font-semibold mb-2">Full Name</Text>
+                <Text className="text-text-primary font-semibold mb-2">
+                  Họ và tên
+                </Text>
                 <TextInput
                   className="bg-surface text-text-primary p-4 rounded-2xl"
-                  placeholder="Your full name"
+                  placeholder="Nhập họ và tên"
                   placeholderTextColor="#666"
                   value={addressForm.fullName}
                   onChangeText={(text) =>
@@ -137,10 +137,12 @@ const AddressFormModal = ({
 
               {/* STREET */}
               <View className="mb-5">
-                <Text className="text-text-primary font-semibold mb-2">Street Address</Text>
+                <Text className="text-text-primary font-semibold mb-2">
+                  Địa chỉ cụ thể
+                </Text>
                 <TextInput
                   className="bg-surface text-text-primary p-4 rounded-2xl"
-                  placeholder="Street address"
+                  placeholder="Số nhà, tên đường..."
                   placeholderTextColor="#666"
                   value={addressForm.streetAddress}
                   onChangeText={(text) =>
@@ -152,10 +154,12 @@ const AddressFormModal = ({
 
               {/* CITY */}
               <View className="mb-5">
-                <Text className="text-text-primary font-semibold mb-2">City</Text>
+                <Text className="text-text-primary font-semibold mb-2">
+                  Thành phố / Tỉnh
+                </Text>
                 <TextInput
                   className="bg-surface text-text-primary p-4 rounded-2xl"
-                  placeholder="City"
+                  placeholder="Nhập thành phố"
                   placeholderTextColor="#666"
                   value={addressForm.city}
                   onChangeText={(text) =>
@@ -166,10 +170,12 @@ const AddressFormModal = ({
 
               {/* PHONE */}
               <View className="mb-5">
-                <Text className="text-text-primary font-semibold mb-2">Phone Number</Text>
+                <Text className="text-text-primary font-semibold mb-2">
+                  Số điện thoại
+                </Text>
                 <TextInput
                   className="bg-surface text-text-primary p-4 rounded-2xl"
-                  placeholder="0901234567 or +84901234567"
+                  placeholder="0901234567 hoặc +84901234567"
                   placeholderTextColor="#666"
                   value={addressForm.phoneNumber}
                   onChangeText={(text) =>
@@ -185,7 +191,7 @@ const AddressFormModal = ({
               {/* DEFAULT */}
               <View className="bg-surface rounded-2xl p-4 flex-row justify-between mb-6">
                 <Text className="text-text-primary font-semibold">
-                  Set as default address
+                  Đặt làm địa chỉ mặc định
                 </Text>
                 <Switch
                   value={addressForm.isDefault}
@@ -205,7 +211,7 @@ const AddressFormModal = ({
                   <ActivityIndicator size="small" color="#121212" />
                 ) : (
                   <Text className="text-background font-bold text-lg">
-                    {isEditing ? "Save Changes" : "Add Address"}
+                    {isEditing ? "Lưu thay đổi" : "Thêm địa chỉ"}
                   </Text>
                 )}
               </TouchableOpacity>

@@ -4,29 +4,31 @@ import { Order } from "../models/order.model.js";
 import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
 import { Coupon } from "../models/coupon.model.js";
+
+/* ================= CREATE PRODUCT ================= */
 export async function createProduct(req, res) {
- try {
+  try {
     const { name, description, price, stock, category } = req.body;
+
     if (!name || !description || !price || !stock || !category) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin sản phẩm" });
     }
+
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "At least one image is required" });
+      return res.status(400).json({ message: "Cần ít nhất một hình ảnh sản phẩm" });
     }
 
     if (req.files.length > 3) {
-      return res.status(400).json({ message: "Maximum 3 images allowed" });
+      return res.status(400).json({ message: "Tối đa 3 hình ảnh cho mỗi sản phẩm" });
     }
-    const uploadPromises = req.files.map((file) => {
-      return cloudinary.uploader.upload(file.path, {
-        folder: "products",
-      });
-    });
 
+    const uploadResults = await Promise.all(
+      req.files.map((file) =>
+        cloudinary.uploader.upload(file.path, { folder: "products" })
+      )
+    );
 
-    const uploadResults = await Promise.all(uploadPromises);
-    //secure_url
-    const imageUrls = uploadResults.map((result) => result.secure_url);
+    const imageUrls = uploadResults.map((r) => r.secure_url);
 
     const product = await Product.create({
       name,
@@ -38,31 +40,32 @@ export async function createProduct(req, res) {
     });
 
     res.status(201).json(product);
- } catch (error) {
+  } catch (error) {
     console.error("Error creating product", error);
-    res.status(500).json({ message: "Internal server error" });
- }
+    res.status(500).json({ message: "Lỗi máy chủ khi tạo sản phẩm" });
+  }
 }
 
+/* ================= GET ALL PRODUCTS ================= */
 export async function getAllProducts(_, res) {
-    try {
-        //-1 = decending order poducts created recently
-        const products = await Product.find().sort({ createdAt: -1 });
-        res.status(200).json(products);
-    } catch (error) {
-        console.error("Error fetching products", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products", error);
+    res.status(500).json({ message: "Không thể tải danh sách sản phẩm" });
+  }
 }
 
+/* ================= UPDATE PRODUCT ================= */
 export async function updateProduct(req, res) {
-try {
+  try {
     const { id } = req.params;
     const { name, description, price, stock, category } = req.body;
 
     const product = await Product.findById(id);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
     if (name) product.name = name;
@@ -71,30 +74,56 @@ try {
     if (stock !== undefined) product.stock = parseInt(stock);
     if (category) product.category = category;
 
-    // handle image updates if new images are uploaded
     if (req.files && req.files.length > 0) {
       if (req.files.length > 3) {
-        return res.status(400).json({ message: "Maximum 3 images allowed" });
+        return res.status(400).json({ message: "Tối đa 3 hình ảnh cho mỗi sản phẩm" });
       }
 
-      const uploadPromises = req.files.map((file) => {
-        return cloudinary.uploader.upload(file.path, {
-          folder: "products",
-        });
-      });
+      const uploadResults = await Promise.all(
+        req.files.map((file) =>
+          cloudinary.uploader.upload(file.path, { folder: "products" })
+        )
+      );
 
-      const uploadResults = await Promise.all(uploadPromises);
-      product.images = uploadResults.map((result) => result.secure_url);
+      product.images = uploadResults.map((r) => r.secure_url);
     }
 
     await product.save();
     res.status(200).json(product);
   } catch (error) {
-    console.error("Error updating products:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error updating product:", error);
+    res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm" });
   }
 }
 
+/* ================= DELETE PRODUCT ================= */
+export async function deleteProduct(req, res) {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+
+    if (product.images?.length) {
+      const deletePromises = product.images.map((url) => {
+        const publicId = "products/" + url.split("/products/")[1]?.split(".")[0];
+        if (publicId) return cloudinary.uploader.destroy(publicId);
+      });
+      await Promise.all(deletePromises.filter(Boolean));
+    }
+
+    await Product.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Xóa sản phẩm thành công" });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({ message: "Không thể xóa sản phẩm" });
+  }
+}
+
+/* ================= GET ALL ORDERS ================= */
 export async function getAllOrders(_, res) {
   try {
     const orders = await Order.find()
@@ -104,29 +133,29 @@ export async function getAllOrders(_, res) {
 
     res.status(200).json({ orders });
   } catch (error) {
-    console.error("Error in getAllOrders controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ error: "Không thể tải danh sách đơn hàng" });
   }
 }
 
+/* ================= UPDATE ORDER STATUS ================= */
 export async function updateOrderStatus(req, res) {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
 
     if (!["pending", "shipped", "delivered"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+      return res.status(400).json({ error: "Trạng thái đơn hàng không hợp lệ" });
     }
 
     const order = await Order.findById(orderId).populate("user");
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng" });
     }
 
-    // ❗ tránh update lại cùng status
     if (order.status === status) {
       return res.status(400).json({
-        error: `Order already in '${status}' status`,
+        error: `Đơn hàng đã ở trạng thái '${status}'`,
       });
     }
 
@@ -142,24 +171,21 @@ export async function updateOrderStatus(req, res) {
 
     await order.save();
 
-    // 🔔 TẠO NOTIFICATION THEO STATUS
-    let title = "Order update";
+    let title = "Cập nhật đơn hàng";
     let message = "";
 
     switch (status) {
       case "pending":
-        title = "Order confirmed ✅";
-        message = "Your order has been confirmed and is being prepared.";
+        title = "Xác nhận đơn hàng ✅";
+        message = "Đơn hàng của bạn đã được xác nhận và đang được chuẩn bị.";
         break;
-
       case "shipped":
-        title = "Order shipped 🚚";
-        message = "Your order is on the way!";
+        title = "Đơn hàng đang giao 🚚";
+        message = "Đơn hàng của bạn đang trên đường giao.";
         break;
-
       case "delivered":
-        title = "Order delivered 📦";
-        message = "Your order has been delivered successfully.";
+        title = "Giao hàng thành công 📦";
+        message = "Đơn hàng đã được giao thành công.";
         break;
     }
 
@@ -172,35 +198,33 @@ export async function updateOrderStatus(req, res) {
     });
 
     res.status(200).json({
-      message: "Order status updated successfully",
+      message: "Cập nhật trạng thái đơn hàng thành công",
       order,
     });
   } catch (error) {
-    console.error("Error in updateOrderStatus controller:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-}
-export async function getAllCustomers(_, res) {
-  try {
-    const customers = await User.find().sort({ createdAt: -1 }); // latest user first
-    res.status(200).json({ customers });
-  } catch (error) {
-    console.error("Error fetching customers:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error updating order status:", error);
+    res.status(500).json({ error: "Lỗi khi cập nhật trạng thái đơn hàng" });
   }
 }
 
+/* ================= GET ALL CUSTOMERS ================= */
+export async function getAllCustomers(_, res) {
+  try {
+    const customers = await User.find().sort({ createdAt: -1 });
+    res.status(200).json({ customers });
+  } catch (error) {
+    console.error("Error fetching customers:", error);
+    res.status(500).json({ error: "Không thể tải danh sách khách hàng" });
+  }
+}
+
+/* ================= DASHBOARD STATS ================= */
 export async function getDashboardStats(_, res) {
   try {
     const totalOrders = await Order.countDocuments();
 
     const revenueResult = await Order.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$totalPrice" },
-        },
-      },
+      { $group: { _id: null, total: { $sum: "$totalPrice" } } },
     ]);
 
     const totalRevenue = revenueResult[0]?.total || 0;
@@ -216,35 +240,11 @@ export async function getDashboardStats(_, res) {
     });
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Không thể tải dữ liệu thống kê" });
   }
 }
-export const deleteProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // Delete images from Cloudinary
-    if (product.images && product.images.length > 0) {
-      const deletePromises = product.images.map((imageUrl) => {
-        // Extract public_id from URL (assumes format: .../products/publicId.ext)
-        const publicId = "products/" + imageUrl.split("/products/")[1]?.split(".")[0];
-        if (publicId) return cloudinary.uploader.destroy(publicId);
-      });
-      await Promise.all(deletePromises.filter(Boolean));
-    }
-
-    await Product.findByIdAndDelete(id);
-    res.status(200).json({ message: "Product deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Failed to delete product" });
-  }
-};
+/* ================= COUPONS ================= */
 export async function createCoupon(req, res) {
   try {
     const {
@@ -259,16 +259,16 @@ export async function createCoupon(req, res) {
     } = req.body;
 
     if (!code || !type || !value || !expiresAt) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: "Thiếu thông tin mã giảm giá" });
     }
 
     if (!["percentage", "fixed"].includes(type)) {
-      return res.status(400).json({ message: "Invalid coupon type" });
+      return res.status(400).json({ message: "Loại mã giảm giá không hợp lệ" });
     }
 
     const existing = await Coupon.findOne({ code: code.toUpperCase() });
     if (existing) {
-      return res.status(400).json({ message: "Coupon code already exists" });
+      return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
     }
 
     const coupon = await Coupon.create({
@@ -285,78 +285,57 @@ export async function createCoupon(req, res) {
     res.status(201).json({ coupon });
   } catch (error) {
     console.error("Error creating coupon:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Lỗi khi tạo mã giảm giá" });
   }
 }
 
-/* ================= GET ALL COUPONS ================= */
 export async function getAllCoupons(_, res) {
   try {
     const coupons = await Coupon.find().sort({ createdAt: -1 });
     res.status(200).json({ coupons });
   } catch (error) {
-    console.error("Error fetching coupons:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Không thể tải danh sách mã giảm giá" });
   }
 }
 
-/* ================= UPDATE COUPON ================= */
 export async function updateCoupon(req, res) {
   try {
     const { id } = req.params;
     const coupon = await Coupon.findById(id);
 
     if (!coupon) {
-      return res.status(404).json({ message: "Coupon not found" });
+      return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
     }
 
-    const {
-      code,
-      type,
-      value,
-      minOrderAmount,
-      maxDiscount,
-      expiresAt,
-      usageLimit,
-      isActive,
-    } = req.body;
-
-    if (code) coupon.code = code.toUpperCase();
-    if (type) coupon.type = type;
-    if (value !== undefined) coupon.value = value;
-    if (minOrderAmount !== undefined) coupon.minOrderAmount = minOrderAmount;
-    if (maxDiscount !== undefined) coupon.maxDiscount = maxDiscount;
-    if (expiresAt) coupon.expiresAt = expiresAt;
-    if (usageLimit !== undefined) coupon.usageLimit = usageLimit;
-    if (isActive !== undefined) coupon.isActive = isActive;
+    Object.assign(coupon, req.body);
+    if (req.body.code) coupon.code = req.body.code.toUpperCase();
 
     await coupon.save();
 
     res.status(200).json({ coupon });
   } catch (error) {
-    console.error("Error updating coupon:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Lỗi khi cập nhật mã giảm giá" });
   }
 }
 
-/* ================= DELETE COUPON ================= */
 export async function deleteCoupon(req, res) {
   try {
     const { id } = req.params;
 
     const coupon = await Coupon.findById(id);
     if (!coupon) {
-      return res.status(404).json({ message: "Coupon not found" });
+      return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
     }
 
     await Coupon.findByIdAndDelete(id);
 
-    res.status(200).json({ message: "Coupon deleted successfully" });
+    res.status(200).json({ message: "Xóa mã giảm giá thành công" });
   } catch (error) {
-    console.error("Error deleting coupon:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Không thể xóa mã giảm giá" });
   }
 }
+
+/* ================= STATS ================= */
 export async function getRevenueLast7Days(_, res) {
   try {
     const last7Days = [...Array(7)].map((_, i) => {
@@ -369,35 +348,26 @@ export async function getRevenueLast7Days(_, res) {
       {
         $match: {
           status: "delivered",
-          createdAt: {
-            $gte: new Date(new Date().setDate(new Date().getDate() - 6)),
-          },
+          createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 6)) },
         },
       },
       {
         $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
-          },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           revenue: { $sum: "$totalPrice" },
         },
       },
     ]);
 
     const map = {};
-    revenue.forEach(r => (map[r._id] = r.revenue));
+    revenue.forEach((r) => (map[r._id] = r.revenue));
 
-    res.json(
-      last7Days.map(d => ({
-        date: d,
-        revenue: map[d] || 0,
-      }))
-    );
-  } catch (e) {
-    res.status(500).json({ message: "Failed to load revenue stats" });
+    res.json(last7Days.map((d) => ({ date: d, revenue: map[d] || 0 })));
+  } catch {
+    res.status(500).json({ message: "Không thể tải thống kê doanh thu" });
   }
 }
-// GET /admin/stats/top-products
+
 export async function getTopProducts(_, res) {
   try {
     const topProducts = await Order.aggregate([
@@ -419,41 +389,24 @@ export async function getTopProducts(_, res) {
         },
       },
       { $unwind: "$product" },
-      {
-        $project: {
-          _id: 0,
-          name: "$product.name",
-          sold: 1,
-        },
-      },
+      { $project: { _id: 0, name: "$product.name", sold: 1 } },
     ]);
 
     res.json(topProducts);
-  } catch (e) {
-    res.status(500).json({ message: "Failed to load top products" });
+  } catch {
+    res.status(500).json({ message: "Không thể tải sản phẩm bán chạy" });
   }
 }
-// GET /admin/stats/order-status
+
 export async function getOrderStatusStats(_, res) {
   try {
     const stats = await Order.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          status: "$_id",
-          count: 1,
-        },
-      },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { _id: 0, status: "$_id", count: 1 } },
     ]);
 
     res.json(stats);
-  } catch (e) {
-    res.status(500).json({ message: "Failed to load order status stats" });
+  } catch {
+    res.status(500).json({ message: "Không thể tải thống kê trạng thái đơn hàng" });
   }
 }

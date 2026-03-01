@@ -25,7 +25,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Shop",
+          title: "Cửa hàng",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid" size={size} color={color} />
           ),
@@ -34,7 +34,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="cart"
         options={{
-          title: "Cart",
+          title: "Giỏ hàng",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart" size={size} color={color} />
           ),
@@ -43,7 +43,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Tài khoản",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
@@ -52,14 +52,13 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Chatbot",
+          title: "Trợ lý AI",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="logo-android" size={size} color={color} />
           ),
         }}
       />
     </Tabs>
-    
   );
 };
 

@@ -34,11 +34,11 @@ const NotificationsScreen = () => {
       await api.delete(`/notifications/${id}`);
       refetch();
     } catch (error) {
-      console.error("Delete error:", error);
+      console.error("Lỗi khi xoá thông báo:", error);
     }
   };
 
-  /** UI khi vuốt */
+  /** UI khi vuốt để xoá */
   const renderRightActions = () => (
     <View className="flex-1 bg-red-500 justify-center items-end pr-6 rounded-2xl">
       <Ionicons name="trash-outline" size={26} color="#fff" />
@@ -77,7 +77,7 @@ const NotificationsScreen = () => {
               </Text>
 
               <Text className="text-text-secondary text-xs mt-2">
-                {new Date(item.createdAt).toLocaleString()}
+                {new Date(item.createdAt).toLocaleString("vi-VN")}
               </Text>
             </View>
 
@@ -109,7 +109,7 @@ const NotificationsScreen = () => {
           />
 
           <Text className="ml-3 text-2xl font-bold text-text-primary">
-            Notifications
+            Thông báo
           </Text>
         </View>
 
@@ -123,7 +123,7 @@ const NotificationsScreen = () => {
               color="#999"
             />
             <Text className="text-text-secondary mt-4">
-              No notifications yet
+              Chưa có thông báo nào
             </Text>
           </View>
         ) : (

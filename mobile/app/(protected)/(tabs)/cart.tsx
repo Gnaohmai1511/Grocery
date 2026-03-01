@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
 import { useStripe } from "@stripe/stripe-react-native";
 import { useState } from "react";
@@ -17,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import OrderSummary from "@/components/OrderSummary";
 import AddressSelectionModal from "@/components/AddressSelectionModal";
-import { TextInput } from "react-native";
+
 const CartScreen = () => {
   const api = useApi();
 
@@ -59,10 +60,10 @@ const CartScreen = () => {
   };
 
   const handleRemoveItem = (productId: string, productName: string) => {
-    Alert.alert("Remove Item", `Remove ${productName} from cart?`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert("Xóa sản phẩm", `Xóa ${productName} khỏi giỏ hàng?`, [
+      { text: "Hủy", style: "cancel" },
       {
-        text: "Remove",
+        text: "Xóa",
         style: "destructive",
         onPress: () => removeFromCart(productId),
       },
@@ -74,8 +75,8 @@ const CartScreen = () => {
 
     if (!addresses || addresses.length === 0) {
       Alert.alert(
-        "No Address",
-        "Please add a shipping address in your profile before checking out.",
+        "Chưa có địa chỉ",
+        "Vui lòng thêm địa chỉ giao hàng trong hồ sơ trước khi thanh toán.",
         [{ text: "OK" }]
       );
       return;
@@ -103,11 +104,11 @@ const CartScreen = () => {
 
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: data.clientSecret,
-        merchantDisplayName: "Your Store Name",
+        merchantDisplayName: "Cửa hàng của bạn",
       });
 
       if (initError) {
-        Alert.alert("Error", initError.message);
+        Alert.alert("Lỗi", initError.message);
         setPaymentLoading(false);
         return;
       }
@@ -115,35 +116,38 @@ const CartScreen = () => {
       const { error: presentError } = await presentPaymentSheet();
 
       if (presentError) {
-        Alert.alert("Payment cancelled", presentError.message);
+        Alert.alert("Thanh toán bị hủy", presentError.message);
       } else {
         Alert.alert(
-          "Success",
-          "Your payment was successful! Your order is being processed.",
+          "Thành công",
+          "Thanh toán thành công! Đơn hàng của bạn đang được xử lý.",
           [{ text: "OK" }]
         );
         clearCart();
-         // 🔥 RESET COUPON
         setCouponCode("");
         setDiscount(0);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to process payment");
+      Alert.alert("Lỗi", "Thanh toán thất bại");
     } finally {
       setPaymentLoading(false);
     }
   };
+
   const applyCoupon = async () => {
-  try {
-    const { data } = await api.post("/coupons/validate", {
-      code: couponCode,
-      subtotal,
-    });
-    setDiscount(data.discount);
-  } catch (err: any) {
-    Alert.alert("Coupon error", err.response?.data?.error || "Invalid code");
-  }
-};
+    try {
+      const { data } = await api.post("/coupons/validate", {
+        code: couponCode,
+        subtotal,
+      });
+      setDiscount(data.discount);
+    } catch (err: any) {
+      Alert.alert(
+        "Lỗi mã giảm giá",
+        err.response?.data?.error || "Mã không hợp lệ"
+      );
+    }
+  };
 
   if (isLoading) return <LoadingUI />;
   if (isError) return <ErrorUI />;
@@ -151,8 +155,8 @@ const CartScreen = () => {
 
   return (
     <SafeScreen>
-      <Text className="px-6 pb-5 text-text-primary text-3xl font-bold tracking-tight">
-        Cart
+      <Text className="px-6 pb-5 text-text-primary text-3xl font-bold">
+        Giỏ hàng
       </Text>
 
       <ScrollView
@@ -167,7 +171,6 @@ const CartScreen = () => {
                 <View className="relative">
                   <Image
                     source={item.product.images[0]}
-                    className="bg-background-lighter"
                     contentFit="cover"
                     style={{ width: 112, height: 112, borderRadius: 16 }}
                   />
@@ -192,7 +195,7 @@ const CartScreen = () => {
                         ${(item.product.price * item.quantity).toFixed(2)}
                       </Text>
                       <Text className="text-text-secondary text-sm ml-2">
-                        ${item.product.price.toFixed(2)} each
+                        ${item.product.price.toFixed(2)} / sản phẩm
                       </Text>
                     </View>
                   </View>
@@ -263,49 +266,49 @@ const CartScreen = () => {
           ))}
         </View>
 
-        {/* ---------- COUPON INPUT ---------- */}
-<View className="px-6 mt-6">
-  <View className="bg-surface rounded-2xl p-4">
-    <Text className="text-text-primary font-semibold text-lg mb-3">
-      Promo code
-    </Text>
+        {/* MÃ GIẢM GIÁ */}
+        <View className="px-6 mt-6">
+          <View className="bg-surface rounded-2xl p-4">
+            <Text className="text-text-primary font-semibold text-lg mb-3">
+              Mã giảm giá
+            </Text>
 
-    <View className="flex-row items-center">
-      <View className="flex-1 bg-background-light rounded-xl px-4 py-3 mr-3">
-        <TextInput
-          placeholder="Enter coupon code"
-          placeholderTextColor="#888"
-          value={couponCode}
-          onChangeText={setCouponCode}
-          autoCapitalize="characters"
-          className="text-text-primary font-medium"
-        />
-      </View>
+            <View className="flex-row items-center">
+              <View className="flex-1 bg-background-light rounded-xl px-4 py-3 mr-3">
+                <TextInput
+                  placeholder="Nhập mã giảm giá"
+                  placeholderTextColor="#888"
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  autoCapitalize="characters"
+                  className="text-text-primary font-medium"
+                />
+              </View>
 
-      <TouchableOpacity
-        onPress={applyCoupon}
-        disabled={!couponCode}
-        className={`px-5 py-3 rounded-xl ${
-          couponCode ? "bg-primary" : "bg-gray-500/40"
-        }`}
-      >
-        <Text className="text-background font-bold">
-          Apply
-        </Text>
-      </TouchableOpacity>
-    </View>
+              <TouchableOpacity
+                onPress={applyCoupon}
+                disabled={!couponCode}
+                className={`px-5 py-3 rounded-xl ${
+                  couponCode ? "bg-primary" : "bg-gray-500/40"
+                }`}
+              >
+                <Text className="text-background font-bold">
+                  Áp dụng
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* Discount result */}
             {discount > 0 && (
               <View className="flex-row items-center mt-3">
                 <Ionicons name="pricetag" size={18} color="#22C55E" />
                 <Text className="text-green-500 font-semibold ml-2">
-                  -${discount.toFixed(2)} applied
+                  Đã giảm ${discount.toFixed(2)}
                 </Text>
               </View>
             )}
           </View>
         </View>
+
         <OrderSummary
           subtotal={subtotal}
           shipping={shipping}
@@ -314,13 +317,12 @@ const CartScreen = () => {
         />
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 bg-background/95 border-t border-surface pt-4 pb-32 px-6">
+      <View className="absolute bottom-0 left-0 right-0 bg-background/95 border-t pt-4 pb-32 px-6">
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
             <Ionicons name="cart" size={20} color="#1DB954" />
             <Text className="text-text-secondary ml-2">
-              {cartItemCount}{" "}
-              {cartItemCount === 1 ? "item" : "items"}
+              {cartItemCount} sản phẩm
             </Text>
           </View>
           <Text className="text-text-primary font-bold text-xl">
@@ -339,13 +341,9 @@ const CartScreen = () => {
             ) : (
               <>
                 <Text className="text-background font-bold text-lg mr-2">
-                  Checkout
+                  Thanh toán
                 </Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color="#121212"
-                />
+                <Ionicons name="arrow-forward" size={20} color="#121212" />
               </>
             )}
           </View>
@@ -371,7 +369,7 @@ function LoadingUI() {
     <View className="flex-1 bg-background items-center justify-center">
       <ActivityIndicator size="large" color="#00D9FF" />
       <Text className="text-text-secondary mt-4">
-        Loading cart...
+        Đang tải giỏ hàng...
       </Text>
     </View>
   );
@@ -380,16 +378,12 @@ function LoadingUI() {
 function ErrorUI() {
   return (
     <View className="flex-1 bg-background items-center justify-center px-6">
-      <Ionicons
-        name="alert-circle-outline"
-        size={64}
-        color="#FF6B6B"
-      />
+      <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
       <Text className="text-text-primary font-semibold text-xl mt-4">
-        Failed to load cart
+        Không tải được giỏ hàng
       </Text>
       <Text className="text-text-secondary text-center mt-2">
-        Please check your connection and try again
+        Vui lòng kiểm tra kết nối và thử lại
       </Text>
     </View>
   );
@@ -400,16 +394,16 @@ function EmptyUI() {
     <View className="flex-1 bg-background">
       <View className="px-6 pt-16 pb-5">
         <Text className="text-text-primary text-3xl font-bold">
-          Cart
+          Giỏ hàng
         </Text>
       </View>
       <View className="flex-1 items-center justify-center px-6">
         <Ionicons name="cart-outline" size={80} color="#666" />
         <Text className="text-text-primary font-semibold text-xl mt-4">
-          Your cart is empty
+          Giỏ hàng trống
         </Text>
         <Text className="text-text-secondary text-center mt-2">
-          Add some products to get started
+          Hãy thêm sản phẩm để bắt đầu mua sắm
         </Text>
       </View>
     </View>

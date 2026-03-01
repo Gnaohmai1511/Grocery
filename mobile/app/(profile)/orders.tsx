@@ -8,7 +8,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 function OrdersScreen() {
   const { data: orders, isLoading, isError } = useOrders();
@@ -22,7 +29,7 @@ function OrdersScreen() {
     setShowRatingModal(true);
     setSelectedOrder(order);
 
-    // init ratings for all product to 0 - resettin the state for each product
+    // khởi tạo rating cho từng sản phẩm
     const initialRatings: { [key: string]: number } = {};
     order.orderItems.forEach((item) => {
       const productId = item.product._id;
@@ -34,41 +41,46 @@ function OrdersScreen() {
   const handleSubmitRating = async () => {
     if (!selectedOrder) return;
 
-    // check if all products have been rated
+    // kiểm tra đã đánh giá hết sản phẩm chưa
     const allRated = Object.values(productRatings).every((rating) => rating > 0);
     if (!allRated) {
-      Alert.alert("Error", "Please rate all products");
+      Alert.alert("Lỗi", "Vui lòng đánh giá tất cả sản phẩm");
       return;
     }
 
     try {
       await Promise.all(
-        selectedOrder.orderItems.map((item) => {
+        selectedOrder.orderItems.map((item) =>
           createReviewAsync({
             productId: item.product._id,
             orderId: selectedOrder._id,
             rating: productRatings[item.product._id],
-          });
-        })
+          })
+        )
       );
 
-      Alert.alert("Success", "Thank you for rating all products!");
+      Alert.alert("Thành công", "Cảm ơn bạn đã đánh giá sản phẩm!");
       setShowRatingModal(false);
       setSelectedOrder(null);
       setProductRatings({});
     } catch (error: any) {
-      Alert.alert("Error", error?.response?.data?.error || "Failed to submit rating");
+      Alert.alert(
+        "Lỗi",
+        error?.response?.data?.error || "Gửi đánh giá thất bại"
+      );
     }
   };
 
-  return ( 
+  return (
     <SafeScreen>
       {/* Header */}
       <View className="px-6 pb-5 border-b border-surface flex-row items-center">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text className="text-text-primary text-2xl font-bold">My Orders</Text>
+        <Text className="text-text-primary text-2xl font-bold">
+          Đơn hàng của tôi
+        </Text>
       </View>
 
       {isLoading ? (
@@ -85,7 +97,10 @@ function OrdersScreen() {
         >
           <View className="px-6 py-4">
             {orders.map((order) => {
-              const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+              const totalItems = order.orderItems.reduce(
+                (sum, item) => sum + item.quantity,
+                0
+              );
               const firstImage = order.orderItems[0]?.image || "";
 
               return (
@@ -98,7 +113,7 @@ function OrdersScreen() {
                         contentFit="cover"
                       />
 
-                      {/* BADGE FOR MORE ITEMS */}
+                      {/* BADGE SẢN PHẨM THÊM */}
                       {order.orderItems.length > 1 && (
                         <View className="absolute -bottom-1 -right-1 bg-primary rounded-full size-7 items-center justify-center">
                           <Text className="text-background text-xs font-bold">
@@ -110,14 +125,16 @@ function OrdersScreen() {
 
                     <View className="flex-1 ml-4">
                       <Text className="text-text-primary font-bold text-base mb-1">
-                        Order #{order._id.slice(-8).toUpperCase()}
+                        Đơn hàng #{order._id.slice(-8).toUpperCase()}
                       </Text>
                       <Text className="text-text-secondary text-sm mb-2">
                         {formatDate(order.createdAt)}
                       </Text>
                       <View
                         className="self-start px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: getStatusColor(order.status) + "20" }}
+                        style={{
+                          backgroundColor: getStatusColor(order.status) + "20",
+                        }}
                       >
                         <Text
                           className="text-xs font-bold"
@@ -129,8 +146,8 @@ function OrdersScreen() {
                     </View>
                   </View>
 
-                  {/* ORDER ITEMS SUMMARY */}
-                  {order.orderItems.map((item, index) => (
+                  {/* DANH SÁCH SẢN PHẨM */}
+                  {order.orderItems.map((item) => (
                     <Text
                       key={item._id}
                       className="text-text-secondary text-sm flex-1"
@@ -142,7 +159,9 @@ function OrdersScreen() {
 
                   <View className="border-t border-background-lighter pt-3 flex-row justify-between items-center">
                     <View>
-                      <Text className="text-text-secondary text-xs mb-1">{totalItems} items</Text>
+                      <Text className="text-text-secondary text-xs mb-1">
+                        {totalItems} sản phẩm
+                      </Text>
                       <Text className="text-primary font-bold text-xl">
                         ${order.totalPrice.toFixed(2)}
                       </Text>
@@ -151,8 +170,14 @@ function OrdersScreen() {
                     {order.status === "delivered" &&
                       (order.hasReviewed ? (
                         <View className="bg-primary/20 px-5 py-3 rounded-full flex-row items-center">
-                          <Ionicons name="checkmark-circle" size={18} color="#1DB954" />
-                          <Text className="text-primary font-bold text-sm ml-2">Reviewed</Text>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={18}
+                            color="#1DB954"
+                          />
+                          <Text className="text-primary font-bold text-sm ml-2">
+                            Đã đánh giá
+                          </Text>
                         </View>
                       ) : (
                         <TouchableOpacity
@@ -162,7 +187,7 @@ function OrdersScreen() {
                         >
                           <Ionicons name="star" size={18} color="#121212" />
                           <Text className="text-background font-bold text-sm ml-2">
-                            Leave Rating
+                            Đánh giá
                           </Text>
                         </TouchableOpacity>
                       ))}
@@ -188,13 +213,16 @@ function OrdersScreen() {
     </SafeScreen>
   );
 }
+
 export default OrdersScreen;
 
 function LoadingUI() {
   return (
     <View className="flex-1 items-center justify-center">
       <ActivityIndicator size="large" color="#00D9FF" />
-      <Text className="text-text-secondary mt-4">Loading orders...</Text>
+      <Text className="text-text-secondary mt-4">
+        Đang tải đơn hàng...
+      </Text>
     </View>
   );
 }
@@ -203,9 +231,11 @@ function ErrorUI() {
   return (
     <View className="flex-1 items-center justify-center px-6">
       <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
-      <Text className="text-text-primary font-semibold text-xl mt-4">Failed to load orders</Text>
+      <Text className="text-text-primary font-semibold text-xl mt-4">
+        Không thể tải đơn hàng
+      </Text>
       <Text className="text-text-secondary text-center mt-2">
-        Please check your connection and try again
+        Vui lòng kiểm tra kết nối và thử lại
       </Text>
     </View>
   );
@@ -215,9 +245,11 @@ function EmptyUI() {
   return (
     <View className="flex-1 items-center justify-center px-6">
       <Ionicons name="receipt-outline" size={80} color="#666" />
-      <Text className="text-text-primary font-semibold text-xl mt-4">No orders yet</Text>
+      <Text className="text-text-primary font-semibold text-xl mt-4">
+        Chưa có đơn hàng nào
+      </Text>
       <Text className="text-text-secondary text-center mt-2">
-        Your order history will appear here
+        Lịch sử đơn hàng của bạn sẽ hiển thị tại đây
       </Text>
     </View>
   );

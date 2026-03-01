@@ -88,8 +88,12 @@ function CouponsPage() {
       ...formData,
       value: Number(formData.value),
       minOrderAmount: Number(formData.minOrderAmount || 0),
-      maxDiscount: formData.maxDiscount ? Number(formData.maxDiscount) : undefined,
-      usageLimit: formData.usageLimit ? Number(formData.usageLimit) : undefined,
+      maxDiscount: formData.maxDiscount
+        ? Number(formData.maxDiscount)
+        : undefined,
+      usageLimit: formData.usageLimit
+        ? Number(formData.usageLimit)
+        : undefined,
     };
 
     if (editingCoupon) {
@@ -104,14 +108,17 @@ function CouponsPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Coupons</h1>
+          <h1 className="text-2xl font-bold">Mã giảm giá</h1>
           <p className="text-base-content/70 mt-1">
-            Manage discount coupons
+            Quản lý các mã giảm giá
           </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn btn-primary gap-2">
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn btn-primary gap-2"
+        >
           <PlusIcon className="w-5 h-5" />
-          Add Coupon
+          Thêm mã giảm giá
         </button>
       </div>
 
@@ -125,11 +132,12 @@ function CouponsPage() {
                   <h3 className="font-bold text-lg">{coupon.code}</h3>
                   <p className="text-sm opacity-70">
                     {coupon.type === "percentage"
-                      ? `${coupon.value}% off`
-                      : `$${coupon.value} off`}
+                      ? `Giảm ${coupon.value}%`
+                      : `Giảm ${Number(coupon.value).toLocaleString("vi-VN")} ₫`}
                   </p>
                   <p className="text-xs opacity-60 mt-1">
-                    Expires: {new Date(coupon.expiresAt).toLocaleDateString()}
+                    Hết hạn:{" "}
+                    {new Date(coupon.expiresAt).toLocaleDateString("vi-VN")}
                   </p>
                 </div>
 
@@ -139,7 +147,7 @@ function CouponsPage() {
                       coupon.isActive ? "badge-success" : "badge-ghost"
                     }`}
                   >
-                    {coupon.isActive ? "Active" : "Inactive"}
+                    {coupon.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                   </span>
 
                   <button
@@ -163,14 +171,17 @@ function CouponsPage() {
       </div>
 
       {/* MODAL */}
-      <input type="checkbox" className="modal-toggle" checked={showModal} />
+      <input type="checkbox" className="modal-toggle" checked={showModal} readOnly />
       <div className="modal">
         <div className="modal-box max-w-xl">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold">
-              {editingCoupon ? "Edit Coupon" : "Add Coupon"}
+              {editingCoupon ? "Chỉnh sửa mã giảm giá" : "Thêm mã giảm giá"}
             </h3>
-            <button onClick={closeModal} className="btn btn-sm btn-circle btn-ghost">
+            <button
+              onClick={closeModal}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
               <XIcon className="w-4 h-4" />
             </button>
           </div>
@@ -178,10 +189,13 @@ function CouponsPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               className="input input-bordered w-full"
-              placeholder="Coupon Code"
+              placeholder="Mã giảm giá"
               value={formData.code}
               onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value.toUpperCase() })
+                setFormData({
+                  ...formData,
+                  code: e.target.value.toUpperCase(),
+                })
               }
               required
             />
@@ -194,14 +208,14 @@ function CouponsPage() {
                   setFormData({ ...formData, type: e.target.value })
                 }
               >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed ($)</option>
+                <option value="percentage">Phần trăm (%)</option>
+                <option value="fixed">Số tiền cố định (₫)</option>
               </select>
 
               <input
                 type="number"
                 className="input input-bordered"
-                placeholder="Value"
+                placeholder="Giá trị giảm"
                 value={formData.value}
                 onChange={(e) =>
                   setFormData({ ...formData, value: e.target.value })
@@ -222,10 +236,10 @@ function CouponsPage() {
 
             <div className="modal-action">
               <button type="button" className="btn" onClick={closeModal}>
-                Cancel
+                Hủy
               </button>
               <button type="submit" className="btn btn-primary">
-                {editingCoupon ? "Update Coupon" : "Create Coupon"}
+                {editingCoupon ? "Cập nhật" : "Tạo mã"}
               </button>
             </div>
           </form>

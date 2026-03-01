@@ -29,8 +29,10 @@ function OrdersPage() {
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Orders</h1>
-        <p className="text-base-content/70">Manage customer orders</p>
+        <h1 className="text-2xl font-bold">Đơn hàng</h1>
+        <p className="text-base-content/70">
+          Quản lý đơn hàng của khách
+        </p>
       </div>
 
       {/* ORDERS TABLE */}
@@ -42,20 +44,24 @@ function OrdersPage() {
             </div>
           ) : orders.length === 0 ? (
             <div className="text-center py-12 text-base-content/60">
-              <p className="text-xl font-semibold mb-2">No orders yet</p>
-              <p className="text-sm">Orders will appear here once customers make purchases</p>
+              <p className="text-xl font-semibold mb-2">
+                Chưa có đơn hàng nào
+              </p>
+              <p className="text-sm">
+                Đơn hàng sẽ xuất hiện khi khách hàng mua sắm
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Sản phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày đặt</th>
                   </tr>
                 </thead>
 
@@ -68,44 +74,51 @@ function OrdersPage() {
 
                     return (
                       <tr key={order._id}>
-                        <td>
-                          <span className="font-medium">#{order._id.slice(-8).toUpperCase()}</span>
+                        <td className="font-medium">
+                          #{order._id.slice(-8).toUpperCase()}
                         </td>
 
                         <td>
-                          <div className="font-medium">{order.shippingAddress.fullName}</div>
+                          <div className="font-medium">
+                            {order.shippingAddress.fullName}
+                          </div>
                           <div className="text-sm opacity-60">
-                            {order.shippingAddress.city},
+                            {order.shippingAddress.city}
                           </div>
                         </td>
 
                         <td>
-                          <div className="font-medium">{totalQuantity} items</div>
+                          <div className="font-medium">
+                            {totalQuantity} sản phẩm
+                          </div>
                           <div className="text-sm opacity-60">
                             {order.orderItems[0]?.name}
-                            {order.orderItems.length > 1 && ` +${order.orderItems.length - 1} more`}
+                            {order.orderItems.length > 1 &&
+                              ` +${order.orderItems.length - 1} sản phẩm`}
                           </div>
                         </td>
 
-                        <td>
-                          <span className="font-semibold">${order.totalPrice.toFixed(2)}</span>
+                        <td className="font-semibold">
+                          {order.totalPrice.toLocaleString()} ₫
                         </td>
 
                         <td>
                           <select
                             value={order.status}
-                            onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                            onChange={(e) =>
+                              handleStatusChange(order._id, e.target.value)
+                            }
                             className="select select-sm"
                             disabled={updateStatusMutation.isPending}
                           >
-                            <option value="pending">Pending</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="shipped">Đang giao</option>
+                            <option value="delivered">Đã giao</option>
                           </select>
                         </td>
 
-                        <td>
-                          <span className="text-sm opacity-60">{formatDate(order.createdAt)}</span>
+                        <td className="text-sm opacity-60">
+                          {formatDate(order.createdAt)}
                         </td>
                       </tr>
                     );
@@ -119,4 +132,5 @@ function OrdersPage() {
     </div>
   );
 }
+
 export default OrdersPage;

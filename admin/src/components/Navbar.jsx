@@ -9,13 +9,12 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-// eslint-disable-next-line
 export const NAVIGATION = [
-  { name: "Dashboard", path: "/dashboard", icon: <HomeIcon className="size-5" /> },
-  { name: "Products", path: "/products", icon: <ShoppingBagIcon className="size-5" /> },
-  { name: "Orders", path: "/orders", icon: <ClipboardListIcon className="size-5" /> },
-  { name: "Customers", path: "/customers", icon: <UsersIcon className="size-5" /> },
-  { name: "Coupons", path: "/coupons", icon: <UsersIcon className="size-5" /> },
+  { name: "Bảng điều khiển", path: "/dashboard", icon: <HomeIcon className="size-5" /> },
+  { name: "Sản phẩm", path: "/products", icon: <ShoppingBagIcon className="size-5" /> },
+  { name: "Đơn hàng", path: "/orders", icon: <ClipboardListIcon className="size-5" /> },
+  { name: "Khách hàng", path: "/customers", icon: <UsersIcon className="size-5" /> },
+  { name: "Mã giảm giá", path: "/coupons", icon: <UsersIcon className="size-5" /> },
 ];
 
 function Navbar() {
@@ -23,13 +22,13 @@ function Navbar() {
 
   return (
     <div className="navbar w-full bg-base-300 bg-primary-content">
-      <label htmlFor="my-drawer" className="btn btn-square btn-ghost" aria-label="open sidebar">
+      <label htmlFor="my-drawer" className="btn btn-square btn-ghost" aria-label="mở menu">
         <PanelLeftIcon className="size-5" />
       </label>
 
       <div className="flex-1 px-4">
         <h1 className="text-xl font-bold text-primary">
-          {NAVIGATION.find((item) => item.path === location.pathname)?.name || "Dashboard"}
+          {NAVIGATION.find((item) => item.path === location.pathname)?.name || "Bảng điều khiển"}
         </h1>
       </div>
 

@@ -11,12 +11,12 @@ function CustomersPage() {
   const customers = data?.customers || [];
 
   return (
-    <div className="spacey-6">
+    <div className="space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <h1 className="text-2xl font-bold">Khách hàng</h1>
         <p className="text-base-content/70 mt-1">
-          {customers.length} {customers.length === 1 ? "customer" : "customers"} registered
+          {customers.length} khách hàng đã đăng ký
         </p>
       </div>
 
@@ -29,19 +29,23 @@ function CustomersPage() {
             </div>
           ) : customers.length === 0 ? (
             <div className="text-center py-12 text-base-content/60">
-              <p className="text-xl font-semibold mb-2">No customers yet</p>
-              <p className="text-sm">Customers will appear here once they sign up</p>
+              <p className="text-xl font-semibold mb-2">
+                Chưa có khách hàng nào
+              </p>
+              <p className="text-sm">
+                Khách hàng sẽ xuất hiện sau khi đăng ký tài khoản
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Customer</th>
+                    <th>Khách hàng</th>
                     <th>Email</th>
-                    <th>Addresses</th>
-                    <th>Wishlist</th>
-                    <th>Joined Date</th>
+                    <th>Địa chỉ</th>
+                    <th>Yêu thích</th>
+                    <th>Ngày tham gia</th>
                   </tr>
                 </thead>
 
@@ -65,18 +69,20 @@ function CustomersPage() {
 
                       <td>
                         <div className="badge badge-ghost">
-                          {customer.addresses?.length || 0} address(es)
+                          {customer.addresses?.length || 0} địa chỉ
                         </div>
                       </td>
 
                       <td>
                         <div className="badge badge-ghost">
-                          {customer.wishlist?.length || 0} item(s)
+                          {customer.wishlist?.length || 0} sản phẩm
                         </div>
                       </td>
 
                       <td>
-                        <span className="text-sm opacity-60">{formatDate(customer.createdAt)}</span>
+                        <span className="text-sm opacity-60">
+                          {formatDate(customer.createdAt)}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -89,4 +95,5 @@ function CustomersPage() {
     </div>
   );
 }
+
 export default CustomersPage;
