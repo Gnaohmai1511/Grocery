@@ -58,12 +58,6 @@ const userSchema = new mongoose.Schema(
         ref: "Product",
       },
     ],
-    usedCoupons: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Coupon",
-    },
-],
   },
   { timestamps: true }
 );
