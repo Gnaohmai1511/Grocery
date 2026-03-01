@@ -2,7 +2,11 @@ import { Router } from "express";
 import { createProduct, getAllProducts,
          updateProduct, getAllOrders,
          updateOrderStatus,getAllCustomers,
-         getDashboardStats, deleteProduct } from "../controllers/admin.controller.js";
+         getDashboardStats, deleteProduct,
+         createCoupon,updateCoupon,
+         deleteCoupon,getAllCoupons,
+        getOrderStatusStats, getRevenueLast7Days,getTopProducts } from "../controllers/admin.controller.js";
+
 import { protectRoute, adminOnly } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/multer.middleware.js";
 const router = Router();
@@ -21,5 +25,11 @@ router.patch("/orders/:orderId/status", updateOrderStatus);
 router.get("/customers", getAllCustomers);
 
 router.get("/stats", getDashboardStats);
-
+router.get("/coupons", getAllCoupons);
+router.post("/coupons", createCoupon);
+router.put("/coupons/:id", updateCoupon);
+router.delete("/coupons/:id", deleteCoupon);
+router.get("/stats/revenue", getRevenueLast7Days);
+router.get("/stats/top-products", getTopProducts);
+router.get("/stats/order-status", getOrderStatusStats);
 export default router

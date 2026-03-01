@@ -24,6 +24,8 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  discount: { type: Number, default: 0 },
+  couponCode: String,
 });
 
 const shippingAddressSchema = new mongoose.Schema({

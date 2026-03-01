@@ -6,7 +6,7 @@ import ProductsPage from "./pages/ProductsPage";
 import OrdersPage from "./pages/OrdersPage";
 import CustomersPage from "./pages/CustomersPage";
 import DashboardLayout from "./layouts/DashboardLayout";
-
+import CouponsPage from "./pages/CouponsPage";
 import PageLoader from "./components/PageLoader";
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
         <Route path="products" element={<ProductsPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="customers" element={<CustomersPage />} />
+        <Route path="coupons" element={<CouponsPage />} />
       </Route>
     </Routes>
   );
