@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import OrderSummary from "@/components/OrderSummary";
 import AddressSelectionModal from "@/components/AddressSelectionModal";
-
+import { TextInput } from "react-native";
 const CartScreen = () => {
   const api = useApi();
 
@@ -40,10 +40,13 @@ const CartScreen = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [addressModalVisible, setAddressModalVisible] = useState(false);
 
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+
   const cartItems = cart?.items || [];
   const subtotal = cartTotal;
   const shipping = 10.0;
-  const total = subtotal + shipping;
+  const total = subtotal + shipping - discount;
 
   const handleQuantityChange = (
     productId: string,
@@ -95,6 +98,7 @@ const CartScreen = () => {
           city: selectedAddress.city,
           phoneNumber: selectedAddress.phoneNumber,
         },
+        couponCode,
       });
 
       const { error: initError } = await initPaymentSheet({
@@ -119,6 +123,9 @@ const CartScreen = () => {
           [{ text: "OK" }]
         );
         clearCart();
+         // 🔥 RESET COUPON
+        setCouponCode("");
+        setDiscount(0);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to process payment");
@@ -126,6 +133,17 @@ const CartScreen = () => {
       setPaymentLoading(false);
     }
   };
+  const applyCoupon = async () => {
+  try {
+    const { data } = await api.post("/coupons/validate", {
+      code: couponCode,
+      subtotal,
+    });
+    setDiscount(data.discount);
+  } catch (err: any) {
+    Alert.alert("Coupon error", err.response?.data?.error || "Invalid code");
+  }
+};
 
   if (isLoading) return <LoadingUI />;
   if (isError) return <ErrorUI />;
@@ -245,9 +263,53 @@ const CartScreen = () => {
           ))}
         </View>
 
+        {/* ---------- COUPON INPUT ---------- */}
+<View className="px-6 mt-6">
+  <View className="bg-surface rounded-2xl p-4">
+    <Text className="text-text-primary font-semibold text-lg mb-3">
+      Promo code
+    </Text>
+
+    <View className="flex-row items-center">
+      <View className="flex-1 bg-background-light rounded-xl px-4 py-3 mr-3">
+        <TextInput
+          placeholder="Enter coupon code"
+          placeholderTextColor="#888"
+          value={couponCode}
+          onChangeText={setCouponCode}
+          autoCapitalize="characters"
+          className="text-text-primary font-medium"
+        />
+      </View>
+
+      <TouchableOpacity
+        onPress={applyCoupon}
+        disabled={!couponCode}
+        className={`px-5 py-3 rounded-xl ${
+          couponCode ? "bg-primary" : "bg-gray-500/40"
+        }`}
+      >
+        <Text className="text-background font-bold">
+          Apply
+        </Text>
+      </TouchableOpacity>
+    </View>
+
+            {/* Discount result */}
+            {discount > 0 && (
+              <View className="flex-row items-center mt-3">
+                <Ionicons name="pricetag" size={18} color="#22C55E" />
+                <Text className="text-green-500 font-semibold ml-2">
+                  -${discount.toFixed(2)} applied
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
         <OrderSummary
           subtotal={subtotal}
           shipping={shipping}
+          discount={discount}
           total={total}
         />
       </ScrollView>

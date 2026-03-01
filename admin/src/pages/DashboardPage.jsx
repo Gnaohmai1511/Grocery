@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { orderApi, statsApi } from "../lib/api";
 import { DollarSignIcon, PackageIcon, ShoppingBagIcon, UsersIcon } from "lucide-react";
 import { capitalizeText, formatDate, getOrderStatusBadge } from "../lib/utils";
-
+import RevenueChart from "../components/RevenueChart";
+import { TopProductsChart } from "../components/TopProductsChart";
+import { OrderStatusChart } from "../components/OrderStatusChart";
 function DashboardPage() {
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ["orders"],
@@ -13,6 +15,20 @@ function DashboardPage() {
     queryKey: ["dashboardStats"],
     queryFn: statsApi.getDashboard,
   });
+  const { data: revenueData } = useQuery({
+  queryKey: ["revenue7days"],
+  queryFn: statsApi.getRevenueLast7Days,
+});
+
+const { data: topProductsData } = useQuery({
+  queryKey: ["topProducts"],
+  queryFn: statsApi.getTopProducts,
+});
+
+const { data: orderStatusData } = useQuery({
+  queryKey: ["orderStatusStats"],
+  queryFn: statsApi.getOrderStatus,
+});
 
   const recentOrders = ordersData?.orders?.slice(0, 5) || [];
 
@@ -51,7 +67,15 @@ function DashboardPage() {
           </div>
         ))}
       </div>
+        {/* CHARTS */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <RevenueChart data={revenueData || []} />
+  <OrderStatusChart data={orderStatusData || []} />
+</div>
 
+<div className="grid grid-cols-1">
+  <TopProductsChart data={topProductsData || []} />
+</div>
       {/* RECENT ORDERS */}
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">

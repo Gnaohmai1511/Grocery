@@ -39,11 +39,51 @@ export const statsApi = {
     const { data } = await axiosInstance.get("/admin/stats");
     return data;
   },
+
+  getRevenueLast7Days: async () => {
+    const { data } = await axiosInstance.get("/admin/stats/revenue");
+    return data;
+  },
+
+  getTopProducts: async () => {
+    const { data } = await axiosInstance.get("/admin/stats/top-products");
+    return data;
+  },
+
+  getOrderStatus: async () => {
+    const { data } = await axiosInstance.get("/admin/stats/order-status");
+    return data;
+  },
 };
 
 export const customerApi = {
   getAll: async () => {
     const { data } = await axiosInstance.get("/admin/customers");
+    return data;
+  },
+};
+/* ================= COUPONS ✅ FIX ================= */
+export const couponApi = {
+  getAll: async () => {
+    const { data } = await axiosInstance.get("/admin/coupons");
+    return data.coupons;
+  },
+
+  create: async (payload) => {
+    const { data } = await axiosInstance.post("/admin/coupons", payload);
+    return data;
+  },
+
+  update: async ({ id, data: payload }) => {
+    const { data } = await axiosInstance.put(
+      `/admin/coupons/${id}`,
+      payload
+    );
+    return data;
+  },
+
+  delete: async (id) => {
+    const { data } = await axiosInstance.delete(`/admin/coupons/${id}`);
     return data;
   },
 };

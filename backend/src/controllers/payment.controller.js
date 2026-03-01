@@ -4,14 +4,16 @@ import { User } from "../models/user.model.js";
 import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { Cart } from "../models/cart.model.js";
-
+import { Coupon } from "../models/coupon.model.js";
+import { CouponUsage } from "../models/couponUsage.model.js";
+import mongoose from "mongoose";
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
 
 export async function createPaymentIntent(req, res) {
   try {
-    const { cartItems, shippingAddress } = req.body;
+    const { cartItems, shippingAddress, couponCode } = req.body;
     const user = req.user;
-
+    
     // Validate cart items
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ error: "Cart is empty" });
@@ -42,7 +44,41 @@ export async function createPaymentIntent(req, res) {
     }
 
     const shipping = 10.0; // $10
-    const total = subtotal + shipping;
+    let discount = 0;
+
+if (couponCode) {
+  const coupon = await Coupon.findOne({
+    code: couponCode.toUpperCase(),
+    isActive: true,
+  });
+
+  if (!coupon || coupon.expiresAt < new Date()) {
+    return res.status(400).json({ error: "Invalid coupon" });
+  }
+
+  // 🔥 CHECK USER USED COUPON
+  const used = await CouponUsage.findOne({
+    user: user._id,
+    coupon: coupon._id,
+  });
+
+  if (used) {
+    return res.status(400).json({
+      error: "Coupon already used",
+    });
+  }
+
+  if (coupon.type === "percentage") {
+    discount = (subtotal * coupon.value) / 100;
+    if (coupon.maxDiscount) {
+      discount = Math.min(discount, coupon.maxDiscount);
+    }
+  } else {
+    discount = coupon.value;
+  }
+}
+
+const total = subtotal + shipping - discount;
 
     if (total <= 0) {
       return res.status(400).json({ error: "Invalid order total" });
@@ -81,6 +117,9 @@ export async function createPaymentIntent(req, res) {
         userId: user._id.toString(),
         orderItems: JSON.stringify(validatedItems),
         shippingAddress: JSON.stringify(shippingAddress),
+        subtotal: subtotal.toFixed(2),
+        discount: discount.toFixed(2),
+        couponCode: couponCode || "",
         totalPrice: total.toFixed(2),
       },
       // in the webhooks section we will use this metadata
@@ -98,53 +137,92 @@ export async function handleWebhook(req, res) {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, ENV.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      ENV.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object;
+if (event.type === "payment_intent.succeeded") {
+  const paymentIntent = event.data.object;
 
-    console.log("Payment succeeded:", paymentIntent.id);
+  try {
+    const {
+      userId,
+      orderItems,
+      shippingAddress,
+      totalPrice,
+      discount,
+      couponCode,
+    } = paymentIntent.metadata;
 
-    try {
-      const { userId, clerkId, orderItems, shippingAddress, totalPrice } = paymentIntent.metadata;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
-      // Check if order already exists (prevent duplicates)
-      const existingOrder = await Order.findOne({ "paymentResult.id": paymentIntent.id });
-      if (existingOrder) {
-        console.log("Order already exists for payment:", paymentIntent.id);
-        return res.json({ received: true });
-      }
+    const existingOrder = await Order.findOne({
+      "paymentResult.id": paymentIntent.id,
+    });
+    if (existingOrder) return res.json({ received: true });
 
-      // create order
-      const order = await Order.create({
-        user: userId,
-        clerkId,
-        orderItems: JSON.parse(orderItems),
-        shippingAddress: JSON.parse(shippingAddress),
-        paymentResult: {
-          id: paymentIntent.id,
-          status: "succeeded",
-        },
-        totalPrice: parseFloat(totalPrice),
+    const order = await Order.create({
+      user: userObjectId,
+      orderItems: JSON.parse(orderItems),
+      shippingAddress: JSON.parse(shippingAddress),
+      paymentResult: {
+        id: paymentIntent.id,
+        status: "succeeded",
+      },
+      discount: Number(discount || 0),
+      couponCode,
+      totalPrice: Number(totalPrice),
+    });
+
+    // update stock
+    for (const item of JSON.parse(orderItems)) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
+    // ===== FIX COUPON USAGE =====
+    const normalizedCouponCode =
+      typeof couponCode === "string"
+        ? couponCode.trim().toUpperCase()
+        : null;
+
+    if (normalizedCouponCode) {
+      const coupon = await Coupon.findOne({
+        code: normalizedCouponCode,
+        isActive: true,
       });
 
-      // update product stock
-      const items = JSON.parse(orderItems);
-      for (const item of items) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity },
-        });
-      }
+      if (coupon) {
+        try {
+          await CouponUsage.create({
+            user: userObjectId,
+            coupon: coupon._id,
+          });
 
-      console.log("Order created successfully:", order._id);
-    } catch (error) {
-      console.error("Error creating order from webhook:", error);
+          await Coupon.findByIdAndUpdate(coupon._id, {
+            $inc: { usedCount: 1 },
+          });
+
+          console.log("✅ CouponUsage created");
+        } catch (err) {
+          if (err.code !== 11000) throw err;
+          console.log("⚠️ CouponUsage duplicate ignored");
+        }
+      }
     }
+
+    console.log("✅ Order created:", order._id);
+  } catch (error) {
+    console.error("Webhook order error:", error);
   }
+}
 
   res.json({ received: true });
 }

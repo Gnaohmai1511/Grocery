@@ -3,6 +3,7 @@ import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
+import { Coupon } from "../models/coupon.model.js";
 export async function createProduct(req, res) {
  try {
     const { name, description, price, stock, category } = req.body;
@@ -122,6 +123,13 @@ export async function updateOrderStatus(req, res) {
       return res.status(404).json({ error: "Order not found" });
     }
 
+    // ❗ tránh update lại cùng status
+    if (order.status === status) {
+      return res.status(400).json({
+        error: `Order already in '${status}' status`,
+      });
+    }
+
     order.status = status;
 
     if (status === "shipped" && !order.shippedAt) {
@@ -134,16 +142,33 @@ export async function updateOrderStatus(req, res) {
 
     await order.save();
 
-    // 🔔 TẠO THÔNG BÁO
+    // 🔔 TẠO NOTIFICATION THEO STATUS
+    let title = "Order update";
+    let message = "";
+
+    switch (status) {
+      case "pending":
+        title = "Order confirmed ✅";
+        message = "Your order has been confirmed and is being prepared.";
+        break;
+
+      case "shipped":
+        title = "Order shipped 🚚";
+        message = "Your order is on the way!";
+        break;
+
+      case "delivered":
+        title = "Order delivered 📦";
+        message = "Your order has been delivered successfully.";
+        break;
+    }
+
     await Notification.create({
       user: order.user._id,
       clerkId: order.clerkId,
       order: order._id,
-      title: "Order status updated",
-      message:
-        status === "shipped"
-          ? "Your order has been shipped 🚚"
-          : "Your order has been delivered 📦",
+      title,
+      message,
     });
 
     res.status(200).json({
@@ -155,7 +180,6 @@ export async function updateOrderStatus(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 export async function getAllCustomers(_, res) {
   try {
     const customers = await User.find().sort({ createdAt: -1 }); // latest user first
@@ -221,3 +245,215 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Failed to delete product" });
   }
 };
+export async function createCoupon(req, res) {
+  try {
+    const {
+      code,
+      type,
+      value,
+      minOrderAmount = 0,
+      maxDiscount,
+      expiresAt,
+      usageLimit,
+      isActive = true,
+    } = req.body;
+
+    if (!code || !type || !value || !expiresAt) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!["percentage", "fixed"].includes(type)) {
+      return res.status(400).json({ message: "Invalid coupon type" });
+    }
+
+    const existing = await Coupon.findOne({ code: code.toUpperCase() });
+    if (existing) {
+      return res.status(400).json({ message: "Coupon code already exists" });
+    }
+
+    const coupon = await Coupon.create({
+      code: code.toUpperCase(),
+      type,
+      value,
+      minOrderAmount,
+      maxDiscount,
+      expiresAt,
+      usageLimit,
+      isActive,
+    });
+
+    res.status(201).json({ coupon });
+  } catch (error) {
+    console.error("Error creating coupon:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/* ================= GET ALL COUPONS ================= */
+export async function getAllCoupons(_, res) {
+  try {
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    res.status(200).json({ coupons });
+  } catch (error) {
+    console.error("Error fetching coupons:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/* ================= UPDATE COUPON ================= */
+export async function updateCoupon(req, res) {
+  try {
+    const { id } = req.params;
+    const coupon = await Coupon.findById(id);
+
+    if (!coupon) {
+      return res.status(404).json({ message: "Coupon not found" });
+    }
+
+    const {
+      code,
+      type,
+      value,
+      minOrderAmount,
+      maxDiscount,
+      expiresAt,
+      usageLimit,
+      isActive,
+    } = req.body;
+
+    if (code) coupon.code = code.toUpperCase();
+    if (type) coupon.type = type;
+    if (value !== undefined) coupon.value = value;
+    if (minOrderAmount !== undefined) coupon.minOrderAmount = minOrderAmount;
+    if (maxDiscount !== undefined) coupon.maxDiscount = maxDiscount;
+    if (expiresAt) coupon.expiresAt = expiresAt;
+    if (usageLimit !== undefined) coupon.usageLimit = usageLimit;
+    if (isActive !== undefined) coupon.isActive = isActive;
+
+    await coupon.save();
+
+    res.status(200).json({ coupon });
+  } catch (error) {
+    console.error("Error updating coupon:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/* ================= DELETE COUPON ================= */
+export async function deleteCoupon(req, res) {
+  try {
+    const { id } = req.params;
+
+    const coupon = await Coupon.findById(id);
+    if (!coupon) {
+      return res.status(404).json({ message: "Coupon not found" });
+    }
+
+    await Coupon.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Coupon deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting coupon:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+export async function getRevenueLast7Days(_, res) {
+  try {
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().slice(0, 10);
+    }).reverse();
+
+    const revenue = await Order.aggregate([
+      {
+        $match: {
+          status: "delivered",
+          createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - 6)),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+          },
+          revenue: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const map = {};
+    revenue.forEach(r => (map[r._id] = r.revenue));
+
+    res.json(
+      last7Days.map(d => ({
+        date: d,
+        revenue: map[d] || 0,
+      }))
+    );
+  } catch (e) {
+    res.status(500).json({ message: "Failed to load revenue stats" });
+  }
+}
+// GET /admin/stats/top-products
+export async function getTopProducts(_, res) {
+  try {
+    const topProducts = await Order.aggregate([
+      { $unwind: "$orderItems" },
+      {
+        $group: {
+          _id: "$orderItems.product",
+          sold: { $sum: "$orderItems.quantity" },
+        },
+      },
+      { $sort: { sold: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $project: {
+          _id: 0,
+          name: "$product.name",
+          sold: 1,
+        },
+      },
+    ]);
+
+    res.json(topProducts);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to load top products" });
+  }
+}
+// GET /admin/stats/order-status
+export async function getOrderStatusStats(_, res) {
+  try {
+    const stats = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to load order status stats" });
+  }
+}

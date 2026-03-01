@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import {
   View,
   Text,
@@ -15,6 +16,8 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
+import { TextInput } from "react-native";
+import { useComments, useCreateComment } from "@/hooks/useComments";
 
 const { width } = Dimensions.get("window");
 
@@ -29,6 +32,12 @@ const ProductDetailScreen = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
+  const productId = id as string;
+
+  const { data: comments } = useComments(productId);
+  const { mutate: createComment, isPending } = useCreateComment(productId);
+  const [comment, setComment] = useState("");
+
   const handleAddToCart = () => {
     if (!product) return;
     addToCart(
@@ -42,6 +51,24 @@ const ProductDetailScreen = () => {
     );
   };
 
+  const handleSubmitComment = () => {
+  if (!comment.trim()) return;
+
+  createComment(comment, {
+    onSuccess: () => {
+      setComment("");
+      Alert.alert("Success", "Comment posted");
+    },
+    onError: (err: any) => {
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message ||
+          "You must purchase before commenting"
+      );
+    },
+  });
+};
+
   if (isLoading) return <LoadingUI />;
   if (isError || !product) return <ErrorUI />;
 
@@ -49,6 +76,11 @@ const ProductDetailScreen = () => {
 
   return (
     <SafeScreen>
+      <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
       {/* HEADER */}
       <View className="absolute top-0 left-0 right-0 z-10 px-6 pt-20 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
@@ -83,6 +115,7 @@ const ProductDetailScreen = () => {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
       >
         {/* IMAGE GALLERY */}
         <View className="relative">
@@ -196,6 +229,69 @@ const ProductDetailScreen = () => {
             <Text className="text-text-primary text-lg font-bold mb-3">Description</Text>
             <Text className="text-text-secondary text-base leading-6">{product.description}</Text>
           </View>
+          {/* COMMENTS */}
+<View className="px-6 pb-10">
+  <Text className="text-text-primary text-lg font-bold mb-3">
+    Comments
+  </Text>
+
+  {/* Input */}
+  <View className="bg-surface rounded-xl p-3 mb-4">
+    <TextInput
+      placeholder="Write a comment..."
+      placeholderTextColor="#888"
+      value={comment}
+      onChangeText={setComment}
+      multiline
+      className="text-text-primary"
+    />
+    <TouchableOpacity
+      className="bg-primary rounded-xl py-2 mt-3 items-center"
+      onPress={handleSubmitComment}
+      disabled={isPending}
+    >
+      {isPending ? (
+        <ActivityIndicator color="#121212" />
+      ) : (
+        <Text className="text-background font-bold">Post</Text>
+      )}
+    </TouchableOpacity>
+  </View>
+
+ {/* List */}
+{comments?.length ? (
+  comments.map((c: any) => (
+    <View
+      key={c._id}
+      className="bg-surface rounded-2xl p-4 mb-4"
+    >
+      {/* Header */}
+      <View className="flex-row items-center mb-2">
+        {/* Avatar */}
+        <View className="w-9 h-9 rounded-full bg-primary/20 items-center justify-center mr-3">
+          <Text className="text-primary font-bold">
+            {(c.user?.name || "U")[0]}
+          </Text>
+        </View>
+
+        {/* Name */}
+        <Text className="text-text-primary font-semibold">
+          {c.user?.name || "User"}
+        </Text>
+      </View>
+
+      {/* Content */}
+      <Text className="text-text-secondary leading-6">
+        {c.content}
+      </Text>
+    </View>
+  ))
+) : (
+  <Text className="text-text-secondary text-center mt-4">
+    No comments yet. Be the first to comment!
+  </Text>
+)}
+</View>
         </View>
       </ScrollView>
 
@@ -233,6 +329,7 @@ const ProductDetailScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </SafeScreen>
   );
 };
