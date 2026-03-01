@@ -31,7 +31,12 @@ const RatingModal = ({
   isSubmitting,
 }: RatingModalProps) => {
   return (
-    <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={onClose}
+    >
       {/* backdrop layer */}
       <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 bg-black/70 items-center justify-center px-4">
@@ -42,10 +47,10 @@ const RatingModal = ({
                   <Ionicons name="star" size={32} color="#1DB954" />
                 </View>
                 <Text className="text-text-primary text-2xl font-bold mb-1">
-                  Rate Your Products
+                  Đánh giá sản phẩm
                 </Text>
                 <Text className="text-text-secondary text-center text-sm">
-                  Rate each product from your order
+                  Vui lòng đánh giá từng sản phẩm trong đơn hàng
                 </Text>
               </View>
 
@@ -74,7 +79,7 @@ const RatingModal = ({
                             {item.name}
                           </Text>
                           <Text className="text-text-secondary text-xs mt-1">
-                            Qty: {item.quantity} • ${item.price.toFixed(2)}
+                            Số lượng: {item.quantity} • ${item.price.toFixed(2)}
                           </Text>
                         </View>
                       </View>
@@ -88,9 +93,15 @@ const RatingModal = ({
                             className="mx-1.5"
                           >
                             <Ionicons
-                              name={star <= currentRating ? "star" : "star-outline"}
+                              name={
+                                star <= currentRating
+                                  ? "star"
+                                  : "star-outline"
+                              }
                               size={32}
-                              color={star <= currentRating ? "#1DB954" : "#666"}
+                              color={
+                                star <= currentRating ? "#1DB954" : "#666"
+                              }
                             />
                           </TouchableOpacity>
                         ))}
@@ -110,16 +121,21 @@ const RatingModal = ({
                   {isSubmitting ? (
                     <ActivityIndicator size="small" color="#121212" />
                   ) : (
-                    <Text className="text-background font-bold text-base">Submit All Ratings</Text>
+                    <Text className="text-background font-bold text-base">
+                      Gửi đánh giá
+                    </Text>
                   )}
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   className="bg-surface-lighter rounded-2xl py-4 items-center border border-background-lighter"
                   activeOpacity={0.7}
                   onPress={onClose}
                   disabled={isSubmitting}
                 >
-                  <Text className="text-text-secondary font-bold text-base">Cancel</Text>
+                  <Text className="text-text-secondary font-bold text-base">
+                    Hủy
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

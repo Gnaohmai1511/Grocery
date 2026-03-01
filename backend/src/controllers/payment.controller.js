@@ -7,33 +7,42 @@ import { Cart } from "../models/cart.model.js";
 import { Coupon } from "../models/coupon.model.js";
 import { CouponUsage } from "../models/couponUsage.model.js";
 import mongoose from "mongoose";
+
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
 
 export async function createPaymentIntent(req, res) {
   try {
     const { cartItems, shippingAddress, couponCode } = req.body;
     const user = req.user;
-    
-    // Validate cart items
+
+    // Kiểm tra giỏ hàng
     if (!cartItems || cartItems.length === 0) {
-      return res.status(400).json({ error: "Cart is empty" });
+      return res.status(400).json({
+        error: "Giỏ hàng đang trống",
+      });
     }
 
-    // Calculate total from server-side (don't trust client - ever.)
+    // Tính tổng tiền phía server (không tin client)
     let subtotal = 0;
     const validatedItems = [];
 
     for (const item of cartItems) {
       const product = await Product.findById(item.product._id);
+
       if (!product) {
-        return res.status(404).json({ error: `Product ${item.product.name} not found` });
+        return res.status(404).json({
+          error: `Không tìm thấy sản phẩm ${item.product.name}`,
+        });
       }
 
       if (product.stock < item.quantity) {
-        return res.status(400).json({ error: `Insufficient stock for ${product.name}` });
+        return res.status(400).json({
+          error: `Sản phẩm ${product.name} không đủ tồn kho`,
+        });
       }
 
       subtotal += product.price * item.quantity;
+
       validatedItems.push({
         product: product._id.toString(),
         name: product.name,
@@ -43,54 +52,57 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    const shipping = 10.0; // $10
+    const shipping = 10.0; // phí vận chuyển
     let discount = 0;
 
-if (couponCode) {
-  const coupon = await Coupon.findOne({
-    code: couponCode.toUpperCase(),
-    isActive: true,
-  });
+    // ===== XỬ LÝ COUPON =====
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true,
+      });
 
-  if (!coupon || coupon.expiresAt < new Date()) {
-    return res.status(400).json({ error: "Invalid coupon" });
-  }
+      if (!coupon || coupon.expiresAt < new Date()) {
+        return res.status(400).json({
+          error: "Mã giảm giá không hợp lệ hoặc đã hết hạn",
+        });
+      }
 
-  // 🔥 CHECK USER USED COUPON
-  const used = await CouponUsage.findOne({
-    user: user._id,
-    coupon: coupon._id,
-  });
+      // Kiểm tra user đã dùng coupon chưa
+      const used = await CouponUsage.findOne({
+        user: user._id,
+        coupon: coupon._id,
+      });
 
-  if (used) {
-    return res.status(400).json({
-      error: "Coupon already used",
-    });
-  }
+      if (used) {
+        return res.status(400).json({
+          error: "Bạn đã sử dụng mã giảm giá này rồi",
+        });
+      }
 
-  if (coupon.type === "percentage") {
-    discount = (subtotal * coupon.value) / 100;
-    if (coupon.maxDiscount) {
-      discount = Math.min(discount, coupon.maxDiscount);
+      if (coupon.type === "percentage") {
+        discount = (subtotal * coupon.value) / 100;
+        if (coupon.maxDiscount) {
+          discount = Math.min(discount, coupon.maxDiscount);
+        }
+      } else {
+        discount = coupon.value;
+      }
     }
-  } else {
-    discount = coupon.value;
-  }
-}
 
-const total = subtotal + shipping - discount;
+    const total = subtotal + shipping - discount;
 
     if (total <= 0) {
-      return res.status(400).json({ error: "Invalid order total" });
+      return res.status(400).json({
+        error: "Tổng đơn hàng không hợp lệ",
+      });
     }
 
-    // find or create the stripe customer
+    // ===== STRIPE CUSTOMER =====
     let customer;
     if (user.stripeCustomerId) {
-      // find the customer
       customer = await stripe.customers.retrieve(user.stripeCustomerId);
     } else {
-      // create the customer
       customer = await stripe.customers.create({
         email: user.email,
         name: user.name,
@@ -100,13 +112,14 @@ const total = subtotal + shipping - discount;
         },
       });
 
-      // add the stripe customer ID to the  user object in the DB
-      await User.findByIdAndUpdate(user._id, { stripeCustomerId: customer.id });
+      await User.findByIdAndUpdate(user._id, {
+        stripeCustomerId: customer.id,
+      });
     }
 
-    // create payment intent
+    // ===== CREATE PAYMENT INTENT =====
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100), // convert to cents
+      amount: Math.round(total * 100),
       currency: "usd",
       customer: customer.id,
       automatic_payment_methods: {
@@ -122,13 +135,16 @@ const total = subtotal + shipping - discount;
         couponCode: couponCode || "",
         totalPrice: total.toFixed(2),
       },
-      // in the webhooks section we will use this metadata
     });
 
-    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+    });
   } catch (error) {
     console.error("Error creating payment intent:", error);
-    res.status(500).json({ error: "Failed to create payment intent" });
+    res.status(500).json({
+      error: "Không thể tạo yêu cầu thanh toán",
+    });
   }
 }
 
@@ -144,85 +160,88 @@ export async function handleWebhook(req, res) {
     );
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send(`Lỗi webhook: ${err.message}`);
   }
 
-if (event.type === "payment_intent.succeeded") {
-  const paymentIntent = event.data.object;
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object;
 
-  try {
-    const {
-      userId,
-      orderItems,
-      shippingAddress,
-      totalPrice,
-      discount,
-      couponCode,
-    } = paymentIntent.metadata;
+    try {
+      const {
+        userId,
+        orderItems,
+        shippingAddress,
+        totalPrice,
+        discount,
+        couponCode,
+      } = paymentIntent.metadata;
 
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+      const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const existingOrder = await Order.findOne({
-      "paymentResult.id": paymentIntent.id,
-    });
-    if (existingOrder) return res.json({ received: true });
-
-    const order = await Order.create({
-      user: userObjectId,
-      orderItems: JSON.parse(orderItems),
-      shippingAddress: JSON.parse(shippingAddress),
-      paymentResult: {
-        id: paymentIntent.id,
-        status: "succeeded",
-      },
-      discount: Number(discount || 0),
-      couponCode,
-      totalPrice: Number(totalPrice),
-    });
-
-    // update stock
-    for (const item of JSON.parse(orderItems)) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      });
-    }
-
-    // ===== FIX COUPON USAGE =====
-    const normalizedCouponCode =
-      typeof couponCode === "string"
-        ? couponCode.trim().toUpperCase()
-        : null;
-
-    if (normalizedCouponCode) {
-      const coupon = await Coupon.findOne({
-        code: normalizedCouponCode,
-        isActive: true,
+      const existingOrder = await Order.findOne({
+        "paymentResult.id": paymentIntent.id,
       });
 
-      if (coupon) {
-        try {
-          await CouponUsage.create({
-            user: userObjectId,
-            coupon: coupon._id,
-          });
+      if (existingOrder) {
+        return res.json({ received: true });
+      }
 
-          await Coupon.findByIdAndUpdate(coupon._id, {
-            $inc: { usedCount: 1 },
-          });
+      const order = await Order.create({
+        user: userObjectId,
+        orderItems: JSON.parse(orderItems),
+        shippingAddress: JSON.parse(shippingAddress),
+        paymentResult: {
+          id: paymentIntent.id,
+          status: "succeeded",
+        },
+        discount: Number(discount || 0),
+        couponCode,
+        totalPrice: Number(totalPrice),
+      });
 
-          console.log("✅ CouponUsage created");
-        } catch (err) {
-          if (err.code !== 11000) throw err;
-          console.log("⚠️ CouponUsage duplicate ignored");
+      // Cập nhật tồn kho
+      for (const item of JSON.parse(orderItems)) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity },
+        });
+      }
+
+      // ===== GHI NHẬN COUPON ĐÃ DÙNG =====
+      const normalizedCouponCode =
+        typeof couponCode === "string"
+          ? couponCode.trim().toUpperCase()
+          : null;
+
+      if (normalizedCouponCode) {
+        const coupon = await Coupon.findOne({
+          code: normalizedCouponCode,
+          isActive: true,
+        });
+
+        if (coupon) {
+          try {
+            await CouponUsage.create({
+              user: userObjectId,
+              coupon: coupon._id,
+            });
+
+            await Coupon.findByIdAndUpdate(coupon._id, {
+              $inc: { usedCount: 1 },
+            });
+
+            console.log("✅ Đã ghi nhận coupon đã sử dụng");
+          } catch (err) {
+            if (err.code !== 11000) throw err;
+            console.log("⚠️ Coupon đã được ghi nhận trước đó");
+          }
         }
       }
-    }
 
-    console.log("✅ Order created:", order._id);
-  } catch (error) {
-    console.error("Webhook order error:", error);
+      console.log("✅ Đơn hàng được tạo:", order._id);
+    } catch (error) {
+      console.error("Lỗi xử lý webhook đơn hàng:", error);
+    }
   }
-}
 
   res.json({ received: true });
 }

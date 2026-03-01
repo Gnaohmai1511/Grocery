@@ -6,7 +6,14 @@ import { useAddresses } from "@/hooks/useAddresses";
 import { Address } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 function AddressesScreen() {
   const {
@@ -20,6 +27,7 @@ function AddressesScreen() {
     isUpdatingAddress,
     updateAddress,
   } = useAddresses();
+
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState({
@@ -58,10 +66,18 @@ function AddressesScreen() {
   };
 
   const handleDeleteAddress = (addressId: string, label: string) => {
-    Alert.alert("Delete Address", `Are you sure you want to delete ${label}`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteAddress(addressId) },
-    ]);
+    Alert.alert(
+      "Xóa địa chỉ",
+      `Bạn có chắc chắn muốn xóa "${label}" không?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: () => deleteAddress(addressId),
+        },
+      ]
+    );
   };
 
   const handleSaveAddress = () => {
@@ -72,12 +88,12 @@ function AddressesScreen() {
       !addressForm.city ||
       !addressForm.phoneNumber
     ) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
     if (editingAddressId) {
-      // update an existing address
+      // cập nhật địa chỉ
       updateAddress(
         {
           addressId: editingAddressId,
@@ -87,22 +103,28 @@ function AddressesScreen() {
           onSuccess: () => {
             setShowAddressForm(false);
             setEditingAddressId(null);
-            Alert.alert("Success", "Address updated successfully");
+            Alert.alert("Thành công", "Cập nhật địa chỉ thành công");
           },
           onError: (error: any) => {
-            Alert.alert("Error", error?.response?.data?.error || "Failed to update address");
+            Alert.alert(
+              "Lỗi",
+              error?.response?.data?.error || "Cập nhật địa chỉ thất bại"
+            );
           },
         }
       );
     } else {
-      // create new address
+      // thêm địa chỉ mới
       addAddress(addressForm, {
         onSuccess: () => {
           setShowAddressForm(false);
-          Alert.alert("Success", "Address added successfully");
+          Alert.alert("Thành công", "Thêm địa chỉ thành công");
         },
         onError: (error: any) => {
-          Alert.alert("Error", error?.response?.data?.error || "Failed to add address");
+          Alert.alert(
+            "Lỗi",
+            error?.response?.data?.error || "Thêm địa chỉ thất bại"
+          );
         },
       });
     }
@@ -123,16 +145,20 @@ function AddressesScreen() {
       {addresses.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="location-outline" size={80} color="#666" />
-          <Text className="text-text-primary font-semibold text-xl mt-4">No addresses yet</Text>
+          <Text className="text-text-primary font-semibold text-xl mt-4">
+            Chưa có địa chỉ nào
+          </Text>
           <Text className="text-text-secondary text-center mt-2">
-            Add your first delivery address
+            Thêm địa chỉ giao hàng đầu tiên của bạn
           </Text>
           <TouchableOpacity
             className="bg-primary rounded-2xl px-8 py-4 mt-6"
             activeOpacity={0.8}
             onPress={handleAddAddress}
           >
-            <Text className="text-background font-bold text-base">Add Address</Text>
+            <Text className="text-background font-bold text-base">
+              Thêm địa chỉ
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -159,8 +185,14 @@ function AddressesScreen() {
               onPress={handleAddAddress}
             >
               <View className="flex-row items-center">
-                <Ionicons name="add-circle-outline" size={24} color="#121212" />
-                <Text className="text-background font-bold text-base ml-2">Add New Address</Text>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={24}
+                  color="#121212"
+                />
+                <Text className="text-background font-bold text-base ml-2">
+                  Thêm địa chỉ mới
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -180,6 +212,7 @@ function AddressesScreen() {
     </SafeScreen>
   );
 }
+
 export default AddressesScreen;
 
 function ErrorUI() {
@@ -189,10 +222,10 @@ function ErrorUI() {
       <View className="flex-1 items-center justify-center px-6">
         <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
         <Text className="text-text-primary font-semibold text-xl mt-4">
-          Failed to load addresses
+          Không thể tải danh sách địa chỉ
         </Text>
         <Text className="text-text-secondary text-center mt-2">
-          Please check your connection and try again
+          Vui lòng kiểm tra kết nối và thử lại
         </Text>
       </View>
     </SafeScreen>
@@ -205,7 +238,9 @@ function LoadingUI() {
       <AddressesHeader />
       <View className="flex-1 items-center justify-center px-6">
         <ActivityIndicator size="large" color="#00D9FF" />
-        <Text className="text-text-secondary mt-4">Loading addresses...</Text>
+        <Text className="text-text-secondary mt-4">
+          Đang tải địa chỉ...
+        </Text>
       </View>
     </SafeScreen>
   );

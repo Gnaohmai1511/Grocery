@@ -31,7 +31,7 @@ export default function ChatScreen() {
 
   const handleSend = async (text: string) => {
     const userMessage: Message = { role: "user", content: text };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
     try {
@@ -43,20 +43,21 @@ export default function ChatScreen() {
 
       setChatId(res.chatId);
 
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         { role: "assistant", content: res.answer },
       ]);
-    } catch(error: any) {
-        console.error("❌ AI CHAT ERROR FULL:", error);
-        console.error("❌ ERROR MESSAGE:", error?.message);
-        console.error("❌ RESPONSE DATA:", error?.response?.data);
-        console.error("❌ STATUS:", error?.response?.status);
-      setMessages(prev => [
+    } catch (error: any) {
+      console.error("❌ LỖI CHAT AI (FULL):", error);
+      console.error("❌ MESSAGE:", error?.message);
+      console.error("❌ RESPONSE DATA:", error?.response?.data);
+      console.error("❌ STATUS:", error?.response?.status);
+
+      setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.",
         },
       ]);
     } finally {
@@ -70,9 +71,9 @@ export default function ChatScreen() {
       <View
         style={{ height: 56 }}
         className="bg-background border-b border-background-light items-center justify-center"
-    >
+      >
         <Text className="text-lg font-semibold text-text-primary">
-            AI Assistant
+          Trợ lý AI
         </Text>
       </View>
 

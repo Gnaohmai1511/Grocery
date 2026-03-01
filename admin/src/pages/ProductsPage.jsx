@@ -19,13 +19,11 @@ function ProductsPage() {
 
   const queryClient = useQueryClient();
 
-  // fetch some data
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: productApi.getAll,
   });
 
-  // creating, update, deleting
   const createProductMutation = useMutation({
     mutationFn: productApi.create,
     onSuccess: () => {
@@ -51,7 +49,6 @@ function ProductsPage() {
   });
 
   const closeModal = () => {
-    // reset the state
     setShowModal(false);
     setEditingProduct(null);
     setFormData({
@@ -80,9 +77,8 @@ function ProductsPage() {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 3) return alert("Maximum 3 images allowed");
+    if (files.length > 3) return alert("Tối đa 3 hình ảnh");
 
-    // revoke previous blob URLs to free memory
     imagePreviews.forEach((url) => {
       if (url.startsWith("blob:")) URL.revokeObjectURL(url);
     });
@@ -94,9 +90,8 @@ function ProductsPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // for new products, require images
     if (!editingProduct && imagePreviews.length === 0) {
-      return alert("Please upload at least one image");
+      return alert("Vui lòng tải lên ít nhất 1 hình ảnh");
     }
 
     const formDataToSend = new FormData();
@@ -106,11 +101,15 @@ function ProductsPage() {
     formDataToSend.append("stock", formData.stock);
     formDataToSend.append("category", formData.category);
 
-    // only append new images if they were selected
-    if (images.length > 0) images.forEach((image) => formDataToSend.append("images", image));
+    if (images.length > 0) {
+      images.forEach((image) => formDataToSend.append("images", image));
+    }
 
     if (editingProduct) {
-      updateProductMutation.mutate({ id: editingProduct._id, formData: formDataToSend });
+      updateProductMutation.mutate({
+        id: editingProduct._id,
+        formData: formDataToSend,
+      });
     } else {
       createProductMutation.mutate(formDataToSend);
     }
@@ -121,18 +120,23 @@ function ProductsPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-base-content/70 mt-1">Manage your product inventory</p>
+          <h1 className="text-2xl font-bold">Sản phẩm</h1>
+          <p className="text-base-content/70 mt-1">
+            Quản lý danh sách và tồn kho sản phẩm
+          </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn btn-primary gap-2">
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn btn-primary gap-2"
+        >
           <PlusIcon className="w-5 h-5" />
-          Add Product
+          Thêm sản phẩm
         </button>
       </div>
 
-      {/* PRODUCTS GRID */}
+      {/* PRODUCTS LIST */}
       <div className="grid grid-cols-1 gap-4">
-        {products?.map((product) => {
+        {products.map((product) => {
           const status = getStockStatusBadge(product.stock);
 
           return (
@@ -149,18 +153,27 @@ function ProductsPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="card-title">{product.name}</h3>
-                        <p className="text-base-content/70 text-sm">{product.category}</p>
+                        <p className="text-sm text-base-content/70">
+                          {product.category}
+                        </p>
                       </div>
-                      <div className={`badge ${status.class}`}>{status.text}</div>
+                      <div className={`badge ${status.class}`}>
+                        {status.text}
+                      </div>
                     </div>
+
                     <div className="flex items-center gap-6 mt-4">
                       <div>
-                        <p className="text-xs text-base-content/70">Price</p>
-                        <p className="font-bold text-lg">${product.price}</p>
+                        <p className="text-xs text-base-content/70">Giá</p>
+                        <p className="font-bold text-lg">
+                          {product.price.toLocaleString()} ₫
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs text-base-content/70">Stock</p>
-                        <p className="font-bold text-lg">{product.stock} units</p>
+                        <p className="text-xs text-base-content/70">Tồn kho</p>
+                        <p className="font-bold text-lg">
+                          {product.stock} sản phẩm
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -174,7 +187,9 @@ function ProductsPage() {
                     </button>
                     <button
                       className="btn btn-square btn-ghost text-error"
-                      onClick={() => deleteProductMutation.mutate(product._id)}
+                      onClick={() =>
+                        deleteProductMutation.mutate(product._id)
+                      }
                     >
                       {deleteProductMutation.isPending ? (
                         <span className="loading loading-spinner"></span>
@@ -190,18 +205,19 @@ function ProductsPage() {
         })}
       </div>
 
-      {/* ADD/EDIT PRODUCT MODAL */}
-
-      <input type="checkbox" className="modal-toggle" checked={showModal} />
+      {/* MODAL */}
+      <input type="checkbox" className="modal-toggle" checked={showModal} readOnly />
 
       <div className="modal">
         <div className="modal-box max-w-2xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-2xl">
-              {editingProduct ? "Edit Product" : "Add New Product"}
+              {editingProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}
             </h3>
-
-            <button onClick={closeModal} className="btn btn-sm btn-circle btn-ghost">
+            <button
+              onClick={closeModal}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
               <XIcon className="w-5 h-5" />
             </button>
           </div>
@@ -209,108 +225,102 @@ function ProductsPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
-                <label className="label">
-                  <span>Product Name</span>
-                </label>
-
+                <label className="label">Tên sản phẩm</label>
                 <input
                   type="text"
-                  placeholder="Enter product name"
+                  placeholder="Nhập tên sản phẩm"
                   className="input input-bordered"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                 />
               </div>
 
               <div className="form-control">
-                <label className="label">
-                  <span>Category</span>
-                </label>
+                <label className="label">Danh mục</label>
                 <select
                   className="select select-bordered"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
                   required
                 >
-                  <option value="">Select category</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Accessories">Accessories</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Sports">Sports</option>
+                  <option value="">Chọn danh mục</option>
+                  <option value="Electronics">Điện tử</option>
+                  <option value="Accessories">Phụ kiện</option>
+                  <option value="Fashion">Thời trang</option>
+                  <option value="Sports">Thể thao</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
-                <label className="label">
-                  <span>Price ($)</span>
-                </label>
+                <label className="label">Giá (₫)</label>
                 <input
                   type="number"
-                  step="0.01"
-                  placeholder="0.00"
+                  placeholder="0"
                   className="input input-bordered"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   required
                 />
               </div>
 
               <div className="form-control">
-                <label className="label">
-                  <span>Stock</span>
-                </label>
+                <label className="label">Số lượng</label>
                 <input
                   type="number"
                   placeholder="0"
                   className="input input-bordered"
                   value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, stock: e.target.value })
+                  }
                   required
                 />
               </div>
             </div>
 
-            <div className="form-control flex flex-col gap-2">
-              <label className="label">
-                <span>Description</span>
-              </label>
+            <div className="form-control">
+              <label className="label">Mô tả</label>
               <textarea
-                className="textarea textarea-bordered h-24 w-full"
-                placeholder="Enter product description"
+                className="textarea textarea-bordered h-24"
+                placeholder="Nhập mô tả sản phẩm"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 required
               />
             </div>
 
             <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold text-base flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Product Images
-                </span>
-                <span className="label-text-alt text-xs opacity-60">Max 3 images</span>
+              <label className="label flex items-center gap-2 font-semibold">
+                <ImageIcon className="w-5 h-5" />
+                Hình ảnh sản phẩm
               </label>
+              <p className="text-xs opacity-60 mb-2">Tối đa 3 hình ảnh</p>
 
-              <div className="bg-base-200 rounded-xl p-4 border-2 border-dashed border-base-300 hover:border-primary transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                  className="file-input file-input-bordered file-input-primary w-full"
-                  required={!editingProduct}
-                />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                className="file-input file-input-bordered file-input-primary w-full"
+                required={!editingProduct}
+              />
 
-                {editingProduct && (
-                  <p className="text-xs text-base-content/60 mt-2 text-center">
-                    Leave empty to keep current images
-                  </p>
-                )}
-              </div>
+              {editingProduct && (
+                <p className="text-xs text-base-content/60 mt-2 text-center">
+                  Để trống nếu muốn giữ hình ảnh cũ
+                </p>
+              )}
 
               {imagePreviews.length > 0 && (
                 <div className="flex gap-2 mt-2">
@@ -330,22 +340,29 @@ function ProductsPage() {
                 type="button"
                 onClick={closeModal}
                 className="btn"
-                disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                disabled={
+                  createProductMutation.isPending ||
+                  updateProductMutation.isPending
+                }
               >
-                Cancel
+                Hủy
               </button>
 
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                disabled={
+                  createProductMutation.isPending ||
+                  updateProductMutation.isPending
+                }
               >
-                {createProductMutation.isPending || updateProductMutation.isPending ? (
+                {createProductMutation.isPending ||
+                updateProductMutation.isPending ? (
                   <span className="loading loading-spinner"></span>
                 ) : editingProduct ? (
-                  "Update Product"
+                  "Cập nhật"
                 ) : (
-                  "Add Product"
+                  "Thêm sản phẩm"
                 )}
               </button>
             </div>

@@ -20,7 +20,7 @@ export default function ChatInput({
     <View className="flex-row items-center p-3 bg-surface border-t border-background-light">
       <TextInput
         className="flex-1 px-4 py-3 rounded-full bg-background-light text-text-primary"
-        placeholder="Ask me anything..."
+        placeholder="Hỏi điều gì đó..."
         placeholderTextColor="#9C8A7E"
         value={text}
         onChangeText={setText}
@@ -32,7 +32,7 @@ export default function ChatInput({
         disabled={disabled}
         className="ml-2 px-4 py-3 rounded-full bg-primary"
       >
-        <Text className="text-white font-semibold">Send</Text>
+        <Text className="text-white font-semibold">Gửi</Text>
       </TouchableOpacity>
     </View>
   );

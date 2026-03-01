@@ -8,17 +8,25 @@ export async function createOrder(req, res) {
     const { orderItems, shippingAddress, paymentResult, totalPrice } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
-      return res.status(400).json({ error: "No order items" });
+      return res.status(400).json({
+        error: "Đơn hàng không có sản phẩm",
+      });
     }
 
-    // validate products and stock
+    // Kiểm tra sản phẩm và tồn kho
     for (const item of orderItems) {
       const product = await Product.findById(item.product._id);
+
       if (!product) {
-        return res.status(404).json({ error: `Product ${item.name} not found` });
+        return res.status(404).json({
+          error: `Không tìm thấy sản phẩm ${item.name}`,
+        });
       }
+
       if (product.stock < item.quantity) {
-        return res.status(400).json({ error: `Insufficient stock for ${product.name}` });
+        return res.status(400).json({
+          error: `Sản phẩm ${product.name} không đủ số lượng tồn kho`,
+        });
       }
     }
 
@@ -31,44 +39,57 @@ export async function createOrder(req, res) {
       totalPrice,
     });
 
-    // update product stock
+    // Cập nhật tồn kho sản phẩm
     for (const item of orderItems) {
       await Product.findByIdAndUpdate(item.product._id, {
         $inc: { stock: -item.quantity },
       });
     }
 
-    res.status(201).json({ message: "Order created successfully", order });
+    res.status(201).json({
+      message: "Đặt hàng thành công",
+      order,
+    });
   } catch (error) {
     console.error("Error in createOrder controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Có lỗi xảy ra khi tạo đơn hàng",
+    });
   }
 }
 
 export async function getUserOrders(req, res) {
   try {
-    const orders = await Order.find({ clerkId: req.user.clerkId })
+    const orders = await Order.find({
+      clerkId: req.user.clerkId,
+    })
       .populate("orderItems.product")
       .sort({ createdAt: -1 });
 
-    // check if each order has been reviewed
-
+    // Lấy danh sách orderId
     const orderIds = orders.map((order) => order._id);
-    const reviews = await Review.find({ orderId: { $in: orderIds } });
-    const reviewedOrderIds = new Set(reviews.map((review) => review.orderId.toString()));
 
-    const ordersWithReviewStatus = await Promise.all(
-      orders.map(async (order) => {
-        return {
-          ...order.toObject(),
-          hasReviewed: reviewedOrderIds.has(order._id.toString()),
-        };
-      })
+    // Kiểm tra đơn hàng đã được đánh giá hay chưa
+    const reviews = await Review.find({
+      orderId: { $in: orderIds },
+    });
+
+    const reviewedOrderIds = new Set(
+      reviews.map((review) => review.orderId.toString())
     );
 
-    res.status(200).json({ orders: ordersWithReviewStatus });
+    const ordersWithReviewStatus = orders.map((order) => ({
+      ...order.toObject(),
+      hasReviewed: reviewedOrderIds.has(order._id.toString()),
+    }));
+
+    res.status(200).json({
+      orders: ordersWithReviewStatus,
+    });
   } catch (error) {
     console.error("Error in getUserOrders controller:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Không thể lấy danh sách đơn hàng",
+    });
   }
 }

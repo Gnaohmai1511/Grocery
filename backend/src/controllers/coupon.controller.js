@@ -12,20 +12,24 @@ export async function validateCoupon(req, res) {
     });
 
     if (!coupon) {
-      return res.status(400).json({ error: "Invalid coupon" });
+      return res.status(400).json({
+        error: "Mã giảm giá không hợp lệ",
+      });
     }
 
     if (coupon.expiresAt < new Date()) {
-      return res.status(400).json({ error: "Coupon expired" });
+      return res.status(400).json({
+        error: "Mã giảm giá đã hết hạn",
+      });
     }
 
     if (subtotal < coupon.minOrderAmount) {
       return res.status(400).json({
-        error: `Minimum order is $${coupon.minOrderAmount}`,
+        error: `Đơn hàng tối thiểu phải từ $${coupon.minOrderAmount}`,
       });
     }
 
-    // 🔥 CHECK: user đã dùng coupon chưa
+    // 🔥 KIỂM TRA: người dùng đã sử dụng mã này chưa
     const used = await CouponUsage.findOne({
       user: userId,
       coupon: coupon._id,
@@ -33,11 +37,11 @@ export async function validateCoupon(req, res) {
 
     if (used) {
       return res.status(400).json({
-        error: "You have already used this coupon",
+        error: "Bạn đã sử dụng mã giảm giá này rồi",
       });
     }
 
-    // Tính discount (GIỮ NGUYÊN LOGIC CŨ)
+    // Tính giảm giá (GIỮ NGUYÊN LOGIC CŨ)
     let discount = 0;
     if (coupon.type === "percentage") {
       discount = (subtotal * coupon.value) / 100;
@@ -48,9 +52,11 @@ export async function validateCoupon(req, res) {
       discount = coupon.value;
     }
 
-    res.json({ discount });
+    res.status(200).json({ discount });
   } catch (err) {
     console.error("Validate coupon error:", err);
-    res.status(500).json({ error: "Failed to validate coupon" });
+    res.status(500).json({
+      error: "Không thể kiểm tra mã giảm giá",
+    });
   }
 }
