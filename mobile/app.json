@@ -7,7 +7,7 @@
     "icon": "./assets/images/appIcon.png",
     "scheme": "grocery",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -20,7 +20,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.gnaohmai.mobile"
+      "package": "com.gnaohmai.mobile",
+      "permissions": ["INTERNET"]
     },
     "web": {
       "output": "static",
@@ -43,7 +44,6 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
     },
     "extra": {
       "router": {},
