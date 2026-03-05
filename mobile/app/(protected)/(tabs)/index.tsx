@@ -2,6 +2,7 @@ import ProductsGrid from "@/components/ProductsGrid";
 import SafeScreen from "@/components/SafeScreen";
 import useProducts from "@/hooks/useProducts";
 import useNotifications from "@/hooks/useNotifications";
+import useTopProducts from "@/hooks/useTopProducts";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
@@ -14,6 +15,15 @@ import {
   Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Product } from "@/types";
+type TopProduct = {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  averageRating: number;
+  sold: number;
+};
 
 const CATEGORIES = [
   { name: "All", icon: "grid-outline" as const },
@@ -23,9 +33,9 @@ const CATEGORIES = [
   { name: "Books", image: require("@/assets/images/books.png") },
 ];
 
-const router = useRouter();
-
 const ShopScreen = () => {
+  const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [minPrice, setMinPrice] = useState<number | null>(null);
@@ -38,26 +48,25 @@ const ShopScreen = () => {
 
   const { data: products, isLoading, isError } = useProducts();
 
+  const { data: topProducts, isLoading: topLoading } = useTopProducts();
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
 
     let filtered = products;
 
-    // Lọc theo danh mục
     if (selectedCategory !== "All") {
       filtered = filtered.filter(
         (product) => product.category === selectedCategory
       );
     }
 
-    // Lọc theo tìm kiếm
     if (searchQuery.trim()) {
       filtered = filtered.filter((product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Lọc theo giá
     if (minPrice !== null) {
       filtered = filtered.filter((product) => product.price >= minPrice);
     }
@@ -66,7 +75,6 @@ const ShopScreen = () => {
       filtered = filtered.filter((product) => product.price <= maxPrice);
     }
 
-    // Lọc theo đánh giá
     if (minRating !== null) {
       filtered = filtered.filter(
         (product) => product.averageRating >= minRating
@@ -81,6 +89,10 @@ const ShopScreen = () => {
     setMaxPrice(null);
     setMinRating(null);
   };
+  const top3Products = useMemo(() => {
+  if (!topProducts) return [];
+  return topProducts.slice(0, 3);
+}, [topProducts]);
 
   return (
     <SafeScreen>
@@ -102,7 +114,6 @@ const ShopScreen = () => {
             </View>
 
             <View className="flex-row items-center gap-3">
-              {/* THÔNG BÁO */}
               <TouchableOpacity
                 onPress={() => router.push("/notifications")}
                 activeOpacity={0.7}
@@ -123,7 +134,6 @@ const ShopScreen = () => {
                 )}
               </TouchableOpacity>
 
-              {/* BỘ LỌC */}
               <TouchableOpacity
                 className="bg-surface/50 p-3 rounded-full"
                 activeOpacity={0.7}
@@ -134,7 +144,7 @@ const ShopScreen = () => {
             </View>
           </View>
 
-          {/* THANH TÌM KIẾM */}
+          {/* SEARCH */}
           <View className="bg-surface flex-row items-center px-5 py-4 rounded-2xl">
             <Ionicons color="#666" size={22} name="search" />
             <TextInput
@@ -147,7 +157,7 @@ const ShopScreen = () => {
           </View>
         </View>
 
-        {/* DANH MỤC */}
+        {/* CATEGORIES */}
         <View className="mb-6">
           <ScrollView
             horizontal
@@ -156,6 +166,7 @@ const ShopScreen = () => {
           >
             {CATEGORIES.map((category) => {
               const isSelected = selectedCategory === category.name;
+
               return (
                 <TouchableOpacity
                   key={category.name}
@@ -183,17 +194,55 @@ const ShopScreen = () => {
           </ScrollView>
         </View>
 
+   <View className="px-6 mb-8">
+  <Text className="text-text-primary text-lg font-bold mb-4">
+    Sản phẩm bán chạy
+  </Text>
+
+  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+  {(topProducts || []).map((product) => (
+    <TouchableOpacity
+      key={product._id}
+      className="mr-4 bg-surface rounded-2xl p-3 w-40"
+      onPress={() => router.push(`/product/${product._id}`)}
+    >
+      <Image
+        source={{ uri: product.images[0] }}
+        className="w-full h-28 rounded-xl mb-2"
+        resizeMode="cover"
+      />
+
+      <Text
+        numberOfLines={2}
+        className="text-text-primary font-semibold text-sm"
+      >
+        {product.name}
+      </Text>
+
+      <Text className="text-primary font-bold mt-1">
+        ${product.price}
+      </Text>
+
+      <Text className="text-xs text-gray-500">
+        Đã bán {product.sold}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</ScrollView>
+</View>
+
+        {/* PRODUCTS GRID */}
         <View className="px-6 mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-text-primary text-lg font-bold">
               Sản phẩm
             </Text>
+
             <Text className="text-text-secondary text-sm">
               {filteredProducts.length} sản phẩm
             </Text>
           </View>
 
-          {/* GRID SẢN PHẨM */}
           <ProductsGrid
             products={filteredProducts}
             isLoading={isLoading}
@@ -201,20 +250,20 @@ const ShopScreen = () => {
           />
         </View>
 
-        {/* MODAL BỘ LỌC */}
+        {/* FILTER MODAL */}
         <Modal visible={isFilterVisible} animationType="slide" transparent>
           <View className="flex-1 bg-black/40 justify-end">
             <View className="bg-background rounded-t-3xl p-6">
-              {/* Header */}
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-lg font-bold">Bộ lọc</Text>
+
                 <TouchableOpacity onPress={() => setIsFilterVisible(false)}>
                   <Ionicons name="close" size={24} />
                 </TouchableOpacity>
               </View>
 
-              {/* GIÁ */}
               <Text className="font-semibold mb-2">Giá</Text>
+
               <View className="flex-row flex-wrap mb-4">
                 <TouchableOpacity
                   onPress={() => {
@@ -233,7 +282,7 @@ const ShopScreen = () => {
                   }}
                   className="bg-surface px-4 py-2 rounded-full mr-2 mb-2"
                 >
-                  <Text>{'< 100$'}</Text>
+                  <Text>{"< 100$"}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -253,12 +302,12 @@ const ShopScreen = () => {
                   }}
                   className="bg-surface px-4 py-2 rounded-full mb-2"
                 >
-                  <Text>{'> 500$'}</Text>
+                  <Text>{"> 500$"}</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* ĐÁNH GIÁ */}
               <Text className="font-semibold mb-2">Đánh giá</Text>
+
               <View className="flex-row mb-6">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <TouchableOpacity
@@ -272,7 +321,6 @@ const ShopScreen = () => {
                 ))}
               </View>
 
-              {/* ACTION */}
               <View className="flex-row">
                 <TouchableOpacity
                   onPress={resetFilters}
