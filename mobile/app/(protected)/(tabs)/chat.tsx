@@ -13,10 +13,15 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { useAIService } from "@/services/ai.service";
 import SafeScreen from "@/components/SafeScreen";
-
+import { Product } from "@/types";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 type Message = {
   role: "user" | "assistant";
   content: string;
+  product?: Product;
 };
 
 const HEADER_HEIGHT = 56;
@@ -36,17 +41,21 @@ export default function ChatScreen() {
 
     try {
       const res = await askAI({
-        prompt: text,
-        clerkId: user?.id!,
-        chatId,
-      });
+  prompt: text,
+  clerkId: user?.id!,
+  chatId,
+});
 
-      setChatId(res.chatId);
+setChatId(res.chatId);
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: res.answer },
-      ]);
+setMessages((prev) => [
+  ...prev,
+  {
+    role: "assistant",
+    content: res.answer,
+    product: res.product,
+  },
+]);
     } catch (error: any) {
       console.error("❌ LỖI CHAT AI (FULL):", error);
       console.error("❌ MESSAGE:", error?.message);
@@ -85,15 +94,46 @@ export default function ChatScreen() {
       >
         <View className="flex-1 bg-background">
           <FlatList
-            data={messages}
-            keyExtractor={(_, i) => i.toString()}
-            contentContainerStyle={{ padding: 16 }}
-            renderItem={({ item }) => (
-              <ChatBubble role={item.role} content={item.content} />
-            )}
-            ListFooterComponent={loading ? <TypingIndicator /> : null}
-            keyboardShouldPersistTaps="handled"
+  data={messages}
+  keyExtractor={(_, i) => i.toString()}
+  contentContainerStyle={{ padding: 16 }}
+ renderItem={({ item }) => {
+  const product = item.product;
+
+  return (
+    <View>
+      <ChatBubble role={item.role} content={item.content} />
+
+      {product && (
+        <TouchableOpacity
+          className="bg-surface rounded-2xl p-3 mt-2 w-64"
+          onPress={() =>
+            router.push({
+              pathname: "/product/[id]",
+              params: { id: product._id },
+            })
+          }
+        >
+          <Image
+            source={{ uri: product.images[0] }}
+            className="w-full h-32 rounded-xl"
           />
+
+          <Text className="text-text-primary font-bold mt-2">
+            {product.name}
+          </Text>
+
+          <Text className="text-primary font-bold">
+            ${product.price}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}}
+  ListFooterComponent={loading ? <TypingIndicator /> : null}
+  keyboardShouldPersistTaps="handled"
+/>
 
           <ChatInput onSend={handleSend} disabled={loading} />
         </View>

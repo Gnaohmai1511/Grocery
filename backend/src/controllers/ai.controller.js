@@ -169,10 +169,24 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
     );
 
     await chat.save();
+/* =========================
+   TÌM SẢN PHẨM TRONG CÂU TRẢ LỜI
+========================= */
 
+let recommendedProduct = null;
+
+const products = await Product.find({}, "name price images");
+
+for (const product of products) {
+  if (answer.toLowerCase().includes(product.name.toLowerCase())) {
+    recommendedProduct = product;
+    break;
+  }
+}
     res.json({
       answer,
       chatId: chat._id,
+      product: recommendedProduct || null,
     });
 
   } catch (err) {
