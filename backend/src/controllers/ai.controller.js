@@ -16,11 +16,80 @@ export const askAI = async (req, res) => {
     }
 
     /* =========================
+       KIỂM TRA TỪ NGỮ THÔ TỤC
+    ========================= */
+
+    const badWords = [
+      "địt",
+      "địt mẹ",
+      "địt cha",
+      "địt cụ",
+      "đụ má",
+      "đụ mẹ",
+      "đụ cha",
+      "dm",
+      "dmm",
+      "dcm",
+      "clm",
+      "vcl",
+      "vl",
+      "vãi l",
+      "vãi c",
+      "vãi đ",
+      "vãi lồn",
+      "con chó",
+      "chó chết",
+      "đồ chó",
+      "thằng chó",
+      "con điên",
+      "thằng ngu",
+      "ngu như chó",
+      "đồ ngu",
+      "thằng khốn",
+      "con khốn",
+      "đồ khốn nạn",
+      "lồn",
+      "cặc",
+      "buồi",
+      "chim",
+      "bướm",
+      "l**",
+      "c**",
+      "dm",
+      "dmm",
+      "vcl",
+      "vl",
+      "cc",
+      "cl",
+      "clm",
+      "đm",
+      "djt",
+      "đjt"
+    ];
+
+    const normalizedPrompt = prompt.toLowerCase();
+
+    const containsBadWord = badWords.some((word) =>
+      normalizedPrompt.includes(word)
+    );
+
+    if (containsBadWord) {
+      return res.json({
+        answer:
+          "⚠️ Vui lòng sử dụng ngôn ngữ lịch sự khi trò chuyện với trợ lý AI của Grocery.",
+        chatId: chatId || null,
+        product: null,
+      });
+    }
+
+    /* =========================
        LẤY DỮ LIỆU NGƯỜI DÙNG
     ========================= */
+
     const user = await User.findOne({ clerkId });
     const orders = await Order.find({ clerkId }).limit(3);
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
+
     const newProducts = await Product.find()
       .sort({ createdAt: -1 })
       .limit(5);
@@ -28,6 +97,7 @@ export const askAI = async (req, res) => {
     /* =========================
        LẤY CHAT & LỊCH SỬ
     ========================= */
+
     let chat = null;
     let previousMessages = "";
 
@@ -46,61 +116,70 @@ export const askAI = async (req, res) => {
       }
     }
 
-   /* =========================
-   TÌM SẢN PHẨM ĐÃ TƯ VẤN (FIX)
-========================= */
-let lastMentionedProduct = null;
+    /* =========================
+       TÌM SẢN PHẨM ĐÃ TƯ VẤN
+    ========================= */
 
-if (chat?.messages?.length) {
-  const products = await Product.find({}, "name price stock category description averageRating");
+    let lastMentionedProduct = null;
 
-  for (let i = chat.messages.length - 1; i >= 0; i--) {
-    const msg = chat.messages[i];
+    if (chat?.messages?.length) {
+      const products = await Product.find(
+        {},
+        "name price stock category description averageRating"
+      );
 
-    if (msg.role !== "assistant") continue;
+      for (let i = chat.messages.length - 1; i >= 0; i--) {
+        const msg = chat.messages[i];
 
-    for (const product of products) {
-      if (
-        msg.content.toLowerCase().includes(product.name.toLowerCase())
-      ) {
-        lastMentionedProduct = product;
-        break;
+        if (msg.role !== "assistant") continue;
+
+        for (const product of products) {
+          if (
+            msg.content
+              .toLowerCase()
+              .includes(product.name.toLowerCase())
+          ) {
+            lastMentionedProduct = product;
+            break;
+          }
+        }
+
+        if (lastMentionedProduct) break;
       }
     }
-
-    if (lastMentionedProduct) break;
-  }
-}
 
     /* =========================
        SYSTEM PROMPT
     ========================= */
+
     const systemPrompt = `
 Bạn là AI chatbot của ứng dụng Ecommerce tên là "Grocery".
 
 === LUẬT BẮT BUỘC ===
 1. Khi người dùng chào hỏi, hãy trả lời thân thiện và giới thiệu bạn là trợ lý ảo của Grocery.
+
 2. CHỈ trả lời các câu hỏi liên quan đến:
-   - Sản phẩm
-   - Đơn hàng
-   - Giỏ hàng
-   - Thanh toán
-   - Tài khoản người dùng
-   - Khuyến mãi trong app Grocery
+- Sản phẩm
+- Đơn hàng
+- Giỏ hàng
+- Thanh toán
+- Tài khoản người dùng
+- Khuyến mãi trong app Grocery
 
 3. TUYỆT ĐỐI KHÔNG trả lời các chủ đề:
-   - Lập trình
-   - Toán học
-   - Chính trị
-   - Tôn giáo
-   - Đời sống cá nhân
-   - Kiến thức chung không liên quan Ecommerce
+- Lập trình
+- Toán học
+- Chính trị
+- Tôn giáo
+- Đời sống cá nhân
+- Kiến thức chung không liên quan Ecommerce
 
 4. Nếu câu hỏi KHÔNG liên quan Grocery:
 → Trả lời đúng 1 câu:
 "Mình chỉ có thể hỗ trợ các câu hỏi về sản phẩm, đơn hàng và mua sắm trong ứng dụng Grocery 🛒"
 
 5. KHÔNG bịa thông tin. Chỉ dùng dữ liệu bên dưới.
+
 6. Trả lời ngắn gọn, thân thiện, bằng tiếng Việt.
 
 7. Nếu người dùng hỏi tiếp (ví dụ: "cái này", "sản phẩm đó", "mua cái lúc nãy"),
@@ -138,15 +217,18 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
 "${prompt}"
 `;
 
-    console.log("SYSTEM PROMPT:\n", systemPrompt);
-
     /* =========================
        GỌI GEMINI
     ========================= */
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
 
     const result = await model.generateContent(systemPrompt);
+
     const answer = result.response.text().trim();
 
     console.log("AI ANSWER:", answer);
@@ -154,6 +236,7 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
     /* =========================
        LƯU CHAT
     ========================= */
+
     if (!chat) {
       chat = new Chat({
         user: user?._id,
@@ -169,28 +252,32 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
     );
 
     await chat.save();
-/* =========================
-   TÌM SẢN PHẨM TRONG CÂU TRẢ LỜI
-========================= */
 
-let recommendedProduct = null;
+    /* =========================
+       TÌM SẢN PHẨM TRONG CÂU TRẢ LỜI
+    ========================= */
 
-const products = await Product.find({}, "name price images");
+    let recommendedProduct = null;
 
-for (const product of products) {
-  if (answer.toLowerCase().includes(product.name.toLowerCase())) {
-    recommendedProduct = product;
-    break;
-  }
-}
+    const products = await Product.find({}, "name price images");
+
+    for (const product of products) {
+      if (answer.toLowerCase().includes(product.name.toLowerCase())) {
+        recommendedProduct = product;
+        break;
+      }
+    }
+
     res.json({
       answer,
       chatId: chat._id,
       product: recommendedProduct || null,
     });
-
   } catch (err) {
     console.error("AI ERROR:", err);
-    res.status(500).json({ error: "AI không phản hồi" });
+
+    res.status(500).json({
+      error: "AI không phản hồi",
+    });
   }
 };
