@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 type Message = {
   role: "user" | "assistant";
   content: string;
-  product?: Product;
+  products?: Product[];
 };
 
 const HEADER_HEIGHT = 56;
@@ -53,7 +53,7 @@ setMessages((prev) => [
   {
     role: "assistant",
     content: res.answer,
-    product: res.product,
+    products: res.products,
   },
 ]);
     } catch (error: any) {
@@ -98,36 +98,37 @@ setMessages((prev) => [
   keyExtractor={(_, i) => i.toString()}
   contentContainerStyle={{ padding: 16 }}
  renderItem={({ item }) => {
-  const product = item.product;
+  const products = item.products;
 
   return (
     <View>
       <ChatBubble role={item.role} content={item.content} />
 
-      {product && (
-        <TouchableOpacity
-          className="bg-surface rounded-2xl p-3 mt-2 w-64"
-          onPress={() =>
-            router.push({
-              pathname: "/product/[id]",
-              params: { id: product._id },
-            })
-          }
-        >
-          <Image
-            source={{ uri: product.images[0] }}
-            className="w-full h-32 rounded-xl"
-          />
+{products?.map((product) => (
+  <TouchableOpacity
+    key={product._id}
+    className="bg-surface rounded-2xl p-3 mt-2 w-64"
+    onPress={() =>
+      router.push({
+        pathname: "/product/[id]",
+        params: { id: product._id },
+      })
+    }
+  >
+    <Image
+      source={{ uri: product.images[0] }}
+      className="w-full h-32 rounded-xl"
+    />
 
-          <Text className="text-text-primary font-bold mt-2">
-            {product.name}
-          </Text>
+    <Text className="text-text-primary font-bold mt-2">
+      {product.name}
+    </Text>
 
-          <Text className="text-primary font-bold">
-            ${product.price}
-          </Text>
-        </TouchableOpacity>
-      )}
+    <Text className="text-primary font-bold">
+      ${product.price}
+    </Text>
+  </TouchableOpacity>
+))}
     </View>
   );
 }}

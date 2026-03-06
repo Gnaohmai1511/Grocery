@@ -32,7 +32,7 @@ export async function getTopProducts(req, res) {
       },
 
       { $sort: { sold: -1 } },
-      { $limit: 5 }, 
+      { $limit: 3 }, 
 
       {
         $lookup: {
