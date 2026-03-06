@@ -148,6 +148,40 @@ export const askAI = async (req, res) => {
       }
     }
 
+    const topProducts = await Order.aggregate([
+  { $unwind: "$orderItems" },
+
+  {
+    $group: {
+      _id: "$orderItems.product",
+      sold: { $sum: "$orderItems.quantity" },
+    },
+  },
+
+  { $sort: { sold: -1 } },
+  { $limit: 3 },
+
+  {
+    $lookup: {
+      from: "products",
+      localField: "_id",
+      foreignField: "_id",
+      as: "product",
+    },
+  },
+
+  { $unwind: "$product" },
+
+  {
+    $project: {
+      name: "$product.name",
+      price: "$product.price",
+      sold: 1,
+      category: "$product.category",
+    },
+  },
+]);
+
     /* =========================
        SYSTEM PROMPT
     ========================= */
@@ -213,6 +247,14 @@ Mô tả: ${lastMentionedProduct.description}
 === LỊCH SỬ HỘI THOẠI ===
 ${previousMessages || "Chưa có hội thoại trước đó"}
 
+=== SẢN PHẨM BÁN CHẠY NHẤT ===
+${topProducts
+  .map(
+    (p) =>
+      `- ${p.name}: ${p.price}đ | Đã bán: ${p.sold}`
+  )
+  .join("\n")}
+
 === CÂU HỎI HIỆN TẠI ===
 "${prompt}"
 `;
@@ -257,22 +299,21 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
        TÌM SẢN PHẨM TRONG CÂU TRẢ LỜI
     ========================= */
 
-    let recommendedProduct = null;
+    let recommendedProducts = [];
 
-    const products = await Product.find({}, "name price images");
+const products = await Product.find({}, "name price images");
 
-    for (const product of products) {
-      if (answer.toLowerCase().includes(product.name.toLowerCase())) {
-        recommendedProduct = product;
-        break;
-      }
-    }
+for (const product of products) {
+  if (answer.toLowerCase().includes(product.name.toLowerCase())) {
+    recommendedProducts.push(product);
+  }
+}
 
     res.json({
-      answer,
-      chatId: chat._id,
-      product: recommendedProduct || null,
-    });
+  answer,
+  chatId: chat._id,
+  products: recommendedProducts,
+});
   } catch (err) {
     console.error("AI ERROR:", err);
 
