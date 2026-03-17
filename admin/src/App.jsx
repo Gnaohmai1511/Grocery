@@ -23,7 +23,7 @@ function App() {
     const email = user.primaryEmailAddress?.emailAddress;
 
     if (email !== import.meta.env.VITE_ADMIN_EMAIL) {
-      alert("❌ Từ chối đăng nhập - Bạn không phải quản trị viên");
+      alert("Từ chối đăng nhập - Bạn không phải quản trị viên");
       signOut();
       setIsAdmin(false);
     } else {
