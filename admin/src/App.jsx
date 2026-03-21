@@ -8,6 +8,7 @@ import CustomersPage from "./pages/CustomersPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import CouponsPage from "./pages/CouponsPage";
 import PageLoader from "./components/PageLoader";
+import BannerPage from "./pages/BannerPage";
 import { useEffect, useState } from "react";
 
 function App() {
@@ -62,6 +63,7 @@ function App() {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="coupons" element={<CouponsPage />} />
+        <Route path="banners" element={<BannerPage />} />
       </Route>
     </Routes>
   );

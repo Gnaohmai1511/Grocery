@@ -1,6 +1,6 @@
 import { UserButton } from "@clerk/clerk-react";
 import { useLocation } from "react-router";
-
+import { ImageIcon, TicketIcon } from "lucide-react";
 import {
   ClipboardListIcon,
   HomeIcon,
@@ -14,7 +14,8 @@ export const NAVIGATION = [
   { name: "Sản phẩm", path: "/products", icon: <ShoppingBagIcon className="size-5" /> },
   { name: "Đơn hàng", path: "/orders", icon: <ClipboardListIcon className="size-5" /> },
   { name: "Khách hàng", path: "/customers", icon: <UsersIcon className="size-5" /> },
-  { name: "Mã giảm giá", path: "/coupons", icon: <UsersIcon className="size-5" /> },
+  { name: "Banner", path: "/banners", icon: <ImageIcon className="size-5" /> },
+  { name: "Mã giảm giá", path: "/coupons", icon: <TicketIcon className="size-5" /> },
 ];
 
 function Navbar() {

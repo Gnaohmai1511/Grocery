@@ -4,6 +4,7 @@ import { Order } from "../models/order.model.js";
 import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
 import { Coupon } from "../models/coupon.model.js";
+import { Banner } from "../models/banner.model.js";
 
 /* ================= CREATE PRODUCT ================= */
 export async function createProduct(req, res) {
@@ -408,5 +409,53 @@ export async function getOrderStatusStats(_, res) {
     res.json(stats);
   } catch {
     res.status(500).json({ message: "Không thể tải thống kê trạng thái đơn hàng" });
+  }
+}
+/* ================= CREATE BANNER ================= */
+export async function createBanner(req, res) {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "Cần upload hình ảnh banner" });
+    }
+
+    // chỉ lấy 1 ảnh
+    const file = req.files[0];
+
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: "banners",
+    });
+
+    const banner = await Banner.create({
+      image: result.secure_url,
+    });
+
+    res.status(201).json(banner);
+  } catch (error) {
+    console.error("Error creating banner:", error);
+    res.status(500).json({ message: "Lỗi tạo banner" });
+  }
+}
+
+/* ================= DELETE BANNER ================= */
+export async function deleteBanner(req, res) {
+  try {
+    const { id } = req.params;
+
+    const banner = await Banner.findById(id);
+    if (!banner) {
+      return res.status(404).json({ message: "Không tìm thấy banner" });
+    }
+
+    // xóa trên cloudinary
+    const publicId = "banners/" + banner.image.split("/banners/")[1]?.split(".")[0];
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId);
+    }
+
+    await Banner.findByIdAndDelete(id);
+
+    res.json({ message: "Xóa banner thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Không thể xóa banner" });
   }
 }

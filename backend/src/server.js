@@ -17,6 +17,7 @@ import aiRoutes from "./routes/ai.route.js";
 import notificationRoutes from "./routes/notification.route.js";
 import couponRoutes from "./routes/coupon.route.js";
 import commentRoutes from "./routes/comment.route.js";
+import bannerRoutes from "./routes/banner.route.js";
 
 const app = express();
 const __dirname = path.resolve();
@@ -44,6 +45,7 @@ app.use("/api/cart",cartRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/banners", bannerRoutes);
 app.use("/api/comments", commentRoutes);
 
 app.get("/api/health", (req, res) => {

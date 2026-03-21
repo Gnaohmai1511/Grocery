@@ -6,7 +6,7 @@ import { createProduct, getAllProducts,
          createCoupon,updateCoupon,
          deleteCoupon,getAllCoupons,
         getOrderStatusStats, getRevenueLast7Days,getTopProducts } from "../controllers/admin.controller.js";
-
+import { createBanner, deleteBanner } from "../controllers/admin.controller.js";
 import { protectRoute, adminOnly } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/multer.middleware.js";
 const router = Router();
@@ -32,4 +32,6 @@ router.delete("/coupons/:id", deleteCoupon);
 router.get("/stats/revenue", getRevenueLast7Days);
 router.get("/stats/top-products", getTopProducts);
 router.get("/stats/order-status", getOrderStatusStats);
+router.post("/banners", upload.array("images", 1), createBanner);
+router.delete("/banners/:id", deleteBanner);
 export default router
