@@ -87,3 +87,19 @@ export const couponApi = {
     return data;
   },
 };
+export const bannerApi = {
+  getAll: async () => {
+    const { data } = await axiosInstance.get("/banners");
+    return data;
+  },
+
+  create: async (formData) => {
+    const { data } = await axiosInstance.post("/admin/banners", formData);
+    return data;
+  },
+
+  delete: async (id) => {
+    const { data } = await axiosInstance.delete(`/admin/banners/${id}`);
+    return data;
+  },
+};

@@ -3,6 +3,8 @@ import SafeScreen from "@/components/SafeScreen";
 import useProducts from "@/hooks/useProducts";
 import useNotifications from "@/hooks/useNotifications";
 import useTopProducts from "@/hooks/useTopProducts";
+import useBanners from "@/hooks/useBanners";
+import BannerSlider from "@/components/BannerSlider";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
@@ -49,6 +51,8 @@ const ShopScreen = () => {
   const { data: products, isLoading, isError } = useProducts();
 
   const { data: topProducts, isLoading: topLoading } = useTopProducts();
+
+  const { data: banners } = useBanners();
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -156,7 +160,44 @@ const ShopScreen = () => {
             />
           </View>
         </View>
+        {/* BANNER SLIDER */}
+        <BannerSlider banners={banners || []} />
+        <View className="px-6 mb-8">
+          <Text className="text-text-primary text-lg font-bold mb-4">
+            Sản phẩm bán chạy
+          </Text>
 
+         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {(topProducts || []).map((product) => (
+        <TouchableOpacity
+          key={product._id}
+          className="mr-4 bg-surface rounded-2xl p-3 w-40"
+          onPress={() => router.push(`/product/${product._id}`)}
+        >
+        <Image
+          source={{ uri: product.images[0] }}
+          className="w-full h-28 rounded-xl mb-2"
+          resizeMode="cover"
+        />
+
+        <Text
+          numberOfLines={2}
+          className="text-text-primary font-semibold text-sm"
+        >
+          {product.name}
+        </Text>
+
+        <Text className="text-primary font-bold mt-1">
+          ${product.price}
+        </Text>
+
+        <Text className="text-xs text-gray-500">
+          Đã bán {product.sold}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+  </View>
         {/* CATEGORIES */}
         <View className="mb-6">
           <ScrollView
@@ -193,43 +234,6 @@ const ShopScreen = () => {
             })}
           </ScrollView>
         </View>
-
-   <View className="px-6 mb-8">
-  <Text className="text-text-primary text-lg font-bold mb-4">
-    Sản phẩm bán chạy
-  </Text>
-
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-  {(topProducts || []).map((product) => (
-    <TouchableOpacity
-      key={product._id}
-      className="mr-4 bg-surface rounded-2xl p-3 w-40"
-      onPress={() => router.push(`/product/${product._id}`)}
-    >
-      <Image
-        source={{ uri: product.images[0] }}
-        className="w-full h-28 rounded-xl mb-2"
-        resizeMode="cover"
-      />
-
-      <Text
-        numberOfLines={2}
-        className="text-text-primary font-semibold text-sm"
-      >
-        {product.name}
-      </Text>
-
-      <Text className="text-primary font-bold mt-1">
-        ${product.price}
-      </Text>
-
-      <Text className="text-xs text-gray-500">
-        Đã bán {product.sold}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</ScrollView>
-</View>
 
         {/* PRODUCTS GRID */}
         <View className="px-6 mb-6">
