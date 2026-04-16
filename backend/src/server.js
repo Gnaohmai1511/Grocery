@@ -18,24 +18,22 @@ import notificationRoutes from "./routes/notification.route.js";
 import couponRoutes from "./routes/coupon.route.js";
 import commentRoutes from "./routes/comment.route.js";
 import bannerRoutes from "./routes/banner.route.js";
-
+import { handleWebhook } from "./controllers/payment.controller.js";
 const app = express();
 const __dirname = path.resolve();
 
-app.use("/api/payment", (req,res,next) =>{
-  if(req.originalUrl === '/api/payment/webhook'){
-    express.raw({type: 'application/json'})(req,res, next);
-  } else {
-    express.json()(req,res,next);
-  }
-} , paymentRoutes);
+app.post(
+  "/api/payment/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook
+);
 
 app.use(express.json());
 app.use(clerkMiddleware());// request authentication middleware
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true })); // credentials: true allows the browser to send the cookies to the server with the request
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
-
+app.use("/api/payment", paymentRoutes);
 app.use("/api/admin",adminRoutes);// Admin routes
 app.use("/api/users",usersRoutes);// Users routes
 app.use("/api/orders",ordersRoutes);
