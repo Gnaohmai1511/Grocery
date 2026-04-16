@@ -170,6 +170,7 @@ export async function handleWebhook(req, res) {
     try {
       const {
         userId,
+        clerkId,
         orderItems,
         shippingAddress,
         totalPrice,
@@ -187,18 +188,22 @@ export async function handleWebhook(req, res) {
         return res.json({ received: true });
       }
 
-      const order = await Order.create({
-        user: userObjectId,
-        orderItems: JSON.parse(orderItems),
-        shippingAddress: JSON.parse(shippingAddress),
-        paymentResult: {
-          id: paymentIntent.id,
-          status: "succeeded",
-        },
-        discount: Number(discount || 0),
-        couponCode,
-        totalPrice: Number(totalPrice),
-      });
+     const order = await Order.create({
+  user: userObjectId,
+  clerkId: clerkId, // ✅ thêm dòng này
+
+  orderItems: JSON.parse(orderItems),
+  shippingAddress: JSON.parse(shippingAddress),
+
+  paymentResult: {
+    id: paymentIntent.id,
+    status: "succeeded",
+  },
+
+  discount: Number(discount || 0),
+  couponCode,
+  totalPrice: Number(totalPrice),
+});
 
       // Cập nhật tồn kho
       for (const item of JSON.parse(orderItems)) {
