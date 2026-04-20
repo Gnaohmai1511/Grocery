@@ -148,8 +148,7 @@ export async function createPaymentIntent(req, res) {
   }
 }
 
-export async function handleWebhook(req, res) {
-  console.log("🔥 WEBHOOK HIT");
+export async function handleWebhook(req, res) {z
   const sig = req.headers["stripe-signature"];
   let event;
 
@@ -188,22 +187,19 @@ export async function handleWebhook(req, res) {
         return res.json({ received: true });
       }
 
-     const order = await Order.create({
-  user: userObjectId,
-  clerkId: clerkId, // ✅ thêm dòng này
-
-  orderItems: JSON.parse(orderItems),
-  shippingAddress: JSON.parse(shippingAddress),
-
-  paymentResult: {
-    id: paymentIntent.id,
-    status: "succeeded",
-  },
-
-  discount: Number(discount || 0),
-  couponCode,
-  totalPrice: Number(totalPrice),
-});
+      const order = await Order.create({
+        user: userObjectId,
+        clerkId: clerkId,
+        orderItems: JSON.parse(orderItems),
+        shippingAddress: JSON.parse(shippingAddress),
+        paymentResult: {
+          id: paymentIntent.id,
+          status: "succeeded",
+        },
+        discount: Number(discount || 0),
+        couponCode,
+        totalPrice: Number(totalPrice),
+      });
 
       // Cập nhật tồn kho
       for (const item of JSON.parse(orderItems)) {
