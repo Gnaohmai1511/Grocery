@@ -273,37 +273,54 @@ const CartScreen = () => {
               Mã giảm giá
             </Text>
 
-            <View className="flex-row items-center">
-              <View className="flex-1 bg-background-light rounded-xl px-4 py-3 mr-3">
-                <TextInput
-                  placeholder="Nhập mã giảm giá"
-                  placeholderTextColor="#888"
-                  value={couponCode}
-                  onChangeText={setCouponCode}
-                  autoCapitalize="characters"
-                  className="text-text-primary font-medium"
-                />
+            {discount > 0 ? (
+              <View className="bg-green-500/10 border border-green-500 rounded-xl p-3">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-text-primary font-semibold text-sm">
+                        Mã {couponCode} đã được áp dụng
+                      </Text>
+                      <Text className="text-green-600 font-bold text-lg mt-1">
+                        Giảm ${discount.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCouponCode("");
+                      setDiscount(0);
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               </View>
+            ) : (
+              <View className="flex-row items-center">
+                <View className="flex-1 bg-background-light rounded-xl px-4 py-3 mr-3">
+                  <TextInput
+                    placeholder="Nhập mã giảm giá"
+                    placeholderTextColor="#888"
+                    value={couponCode}
+                    onChangeText={setCouponCode}
+                    autoCapitalize="characters"
+                    className="text-text-primary font-medium"
+                  />
+                </View>
 
-              <TouchableOpacity
-                onPress={applyCoupon}
-                disabled={!couponCode}
-                className={`px-5 py-3 rounded-xl ${
-                  couponCode ? "bg-primary" : "bg-gray-500/40"
-                }`}
-              >
-                <Text className="text-background font-bold">
-                  Áp dụng
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {discount > 0 && (
-              <View className="flex-row items-center mt-3">
-                <Ionicons name="pricetag" size={18} color="#22C55E" />
-                <Text className="text-green-500 font-semibold ml-2">
-                  Đã giảm ${discount.toFixed(2)}
-                </Text>
+                <TouchableOpacity
+                  onPress={applyCoupon}
+                  disabled={!couponCode}
+                  className={`px-5 py-3 rounded-xl ${
+                    couponCode ? "bg-primary" : "bg-gray-500/40"
+                  }`}
+                >
+                  <Text className="text-background font-bold">
+                    Áp dụng
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
