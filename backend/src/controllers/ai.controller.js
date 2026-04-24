@@ -91,8 +91,7 @@ export const askAI = async (req, res) => {
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
 
     const newProducts = await Product.find()
-      .sort({ createdAt: -1 })
-      .limit(5);
+      .sort({ createdAt: -1 });
 
     /* =========================
        LẤY CHAT & LỊCH SỬ
