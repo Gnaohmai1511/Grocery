@@ -20,51 +20,12 @@ export const askAI = async (req, res) => {
     ========================= */
 
     const badWords = [
-      "địt",
-      "địt mẹ",
-      "địt cha",
-      "địt cụ",
-      "đụ má",
-      "đụ mẹ",
-      "đụ cha",
-      "dm",
-      "dmm",
-      "dcm",
-      "clm",
-      "vcl",
-      "vl",
-      "vãi l",
-      "vãi c",
-      "vãi đ",
-      "vãi lồn",
-      "con chó",
-      "chó chết",
-      "đồ chó",
-      "thằng chó",
-      "con điên",
-      "thằng ngu",
-      "ngu như chó",
-      "đồ ngu",
-      "thằng khốn",
-      "con khốn",
-      "đồ khốn nạn",
-      "lồn",
-      "cặc",
-      "buồi",
-      "chim",
-      "bướm",
-      "l**",
-      "c**",
-      "dm",
-      "dmm",
-      "vcl",
-      "vl",
-      "cc",
-      "cl",
-      "clm",
-      "đm",
-      "djt",
-      "đjt"
+      "địt","địt mẹ","địt cha","địt cụ","đụ má","đụ mẹ","đụ cha",
+      "dm","dmm","dcm","clm","vcl","vl","vãi l","vãi c","vãi đ",
+      "vãi lồn","con chó","chó chết","đồ chó","thằng chó","con điên",
+      "thằng ngu","ngu như chó","đồ ngu","thằng khốn","con khốn",
+      "đồ khốn nạn","lồn","cặc","buồi","chim","bướm",
+      "l**","c**","cc","cl","đm","djt","đjt"
     ];
 
     const normalizedPrompt = prompt.toLowerCase();
@@ -90,8 +51,13 @@ export const askAI = async (req, res) => {
     const orders = await Order.find({ clerkId }).limit(3);
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
 
-    const newProducts = await Product.find()
-      .sort({ createdAt: -1 });
+    // ✅ 3 sản phẩm mới nhất
+    const latestProducts = await Product.find()
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    // ✅ tất cả sản phẩm
+    const allProducts = await Product.find();
 
     /* =========================
        LẤY CHAT & LỊCH SỬ
@@ -147,42 +113,41 @@ export const askAI = async (req, res) => {
       }
     }
 
+    /* =========================
+       TOP SELLING
+    ========================= */
+
     const topProducts = await Order.aggregate([
-  { $unwind: "$orderItems" },
-
-  {
-    $group: {
-      _id: "$orderItems.product",
-      sold: { $sum: "$orderItems.quantity" },
-    },
-  },
-
-  { $sort: { sold: -1 } },
-  { $limit: 3 },
-
-  {
-    $lookup: {
-      from: "products",
-      localField: "_id",
-      foreignField: "_id",
-      as: "product",
-    },
-  },
-
-  { $unwind: "$product" },
-
-  {
-    $project: {
-      name: "$product.name",
-      price: "$product.price",
-      sold: 1,
-      category: "$product.category",
-    },
-  },
-]);
+      { $unwind: "$orderItems" },
+      {
+        $group: {
+          _id: "$orderItems.product",
+          sold: { $sum: "$orderItems.quantity" },
+        },
+      },
+      { $sort: { sold: -1 } },
+      { $limit: 3 },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $project: {
+          name: "$product.name",
+          price: "$product.price",
+          sold: 1,
+          category: "$product.category",
+        },
+      },
+    ]);
 
     /* =========================
-       SYSTEM PROMPT
+       SYSTEM PROMPT (UPDATED)
     ========================= */
 
     const systemPrompt = `
@@ -226,8 +191,11 @@ Email: ${user?.email || "Guest"}
 Số đơn hàng gần đây: ${orders.length}
 Số sản phẩm trong giỏ: ${cart?.items?.length || 0}
 
-=== SẢN PHẨM MỚI ===
-${newProducts.map((p) => `- ${p.name}: ${p.price}đ`).join("\n")}
+=== 3 SẢN PHẨM MỚI NHẤT ===
+${latestProducts.map((p) => `- ${p.name}: ${p.price}đ`).join("\n")}
+
+=== TẤT CẢ SẢN PHẨM ===
+${allProducts.map((p) => `- ${p.name}: ${p.price}đ`).join("\n")}
 
 === SẢN PHẨM ĐÃ TƯ VẤN TRƯỚC ĐÓ ===
 ${
@@ -248,10 +216,7 @@ ${previousMessages || "Chưa có hội thoại trước đó"}
 
 === SẢN PHẨM BÁN CHẠY NHẤT ===
 ${topProducts
-  .map(
-    (p) =>
-      `- ${p.name}: ${p.price}đ | Đã bán: ${p.sold}`
-  )
+  .map((p) => `- ${p.name}: ${p.price}đ | Đã bán: ${p.sold}`)
   .join("\n")}
 
 === CÂU HỎI HIỆN TẠI ===
@@ -300,19 +265,19 @@ ${topProducts
 
     let recommendedProducts = [];
 
-const products = await Product.find({}, "name price images");
+    const products = await Product.find({}, "name price images");
 
-for (const product of products) {
-  if (answer.toLowerCase().includes(product.name.toLowerCase())) {
-    recommendedProducts.push(product);
-  }
-}
+    for (const product of products) {
+      if (answer.toLowerCase().includes(product.name.toLowerCase())) {
+        recommendedProducts.push(product);
+      }
+    }
 
     res.json({
-  answer,
-  chatId: chat._id,
-  products: recommendedProducts,
-});
+      answer,
+      chatId: chat._id,
+      products: recommendedProducts,
+    });
   } catch (err) {
     console.error("AI ERROR:", err);
 

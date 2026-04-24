@@ -2,13 +2,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import axios from "axios";
 import { useEffect } from "react";
 
-// localhost will work in simulator
-//const API_URL = "http://192.168.101.11:5000/api";
-// ở cty
-
-const API_URL = "http://192.168.1.236:5000/api";
-
-//const API_URL = "https://grocery-cdim.onrender.com/api"
+const API_URL = "https://grocery-cdim.onrender.com/api"
 
 const api = axios.create({
   baseURL: API_URL,
