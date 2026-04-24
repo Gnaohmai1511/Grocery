@@ -2,6 +2,14 @@ import { useState } from "react";
 import { PlusIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { couponApi } from "../lib/api.js";
+import { formatDate } from "../lib/utils";
+
+const parseDateToIso = (value) => {
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) return "";
+  const date = new Date(`${year}-${month}-${day}`);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+};
 
 function CouponsPage() {
   const [showModal, setShowModal] = useState(false);
@@ -74,7 +82,7 @@ function CouponsPage() {
       value: coupon.value,
       minOrderAmount: coupon.minOrderAmount || "",
       maxDiscount: coupon.maxDiscount || "",
-      expiresAt: coupon.expiresAt.slice(0, 10),
+      expiresAt: formatDate(coupon.expiresAt),
       usageLimit: coupon.usageLimit || "",
       isActive: coupon.isActive,
     });
@@ -94,6 +102,7 @@ function CouponsPage() {
       usageLimit: formData.usageLimit
         ? Number(formData.usageLimit)
         : undefined,
+      expiresAt: parseDateToIso(formData.expiresAt),
     };
 
     if (editingCoupon) {
@@ -136,19 +145,11 @@ function CouponsPage() {
                       : `Giảm ${Number(coupon.value).toLocaleString("vi-VN")} ₫`}
                   </p>
                   <p className="text-xs opacity-60 mt-1">
-                    Hết hạn:{" "}
-                    {new Date(coupon.expiresAt).toLocaleDateString("vi-VN")}
+                    Hết hạn: {formatDate(coupon.expiresAt)}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`badge ${
-                      coupon.isActive ? "badge-success" : "badge-ghost"
-                    }`}
-                  >
-                    {coupon.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
-                  </span>
 
                   <button
                     className="btn btn-square btn-ghost"
@@ -225,8 +226,10 @@ function CouponsPage() {
             </div>
 
             <input
-              type="date"
+              type="text"
               className="input input-bordered w-full"
+              placeholder="dd/mm/yyyy"
+              pattern="\d{2}/\d{2}/\d{4}"
               value={formData.expiresAt}
               onChange={(e) =>
                 setFormData({ ...formData, expiresAt: e.target.value })

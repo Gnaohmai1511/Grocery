@@ -90,7 +90,6 @@ setMessages((prev) => [
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={HEADER_HEIGHT}
       >
         <View className="flex-1 bg-background">
           <FlatList

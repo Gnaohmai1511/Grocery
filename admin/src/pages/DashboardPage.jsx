@@ -49,7 +49,7 @@ function DashboardPage() {
       name: "Tổng doanh thu",
       value: statsLoading
         ? "..."
-        : `${statsData?.totalRevenue?.toLocaleString()} ₫`,
+        : `${statsData?.totalRevenue?.toLocaleString()} `,
       icon: <DollarSignIcon className="size-8" />,
     },
     {
