@@ -10,6 +10,9 @@ import mongoose from "mongoose";
 
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
 
+// Tỉ giá VND sang USD (ước tính hiện tại)
+const VND_TO_USD_RATE = 23500;
+
 export async function createPaymentIntent(req, res) {
   try {
     const { cartItems, shippingAddress, couponCode } = req.body;
@@ -52,7 +55,7 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    const shipping = 10.0; // phí vận chuyển
+    const shipping = 20000; // phí vận chuyển VND (khoảng 10 USD)
     let discount = 0;
 
     // ===== XỬ LÝ COUPON =====
@@ -98,6 +101,9 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
+    // Chuyển đổi từ VND sang USD cho Stripe
+    const totalUSD = total / VND_TO_USD_RATE;
+
     // ===== STRIPE CUSTOMER =====
     let customer;
     if (user.stripeCustomerId) {
@@ -119,7 +125,7 @@ export async function createPaymentIntent(req, res) {
 
     // ===== CREATE PAYMENT INTENT =====
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100),
+      amount: Math.round(totalUSD * 100),
       currency: "usd",
       customer: customer.id,
       automatic_payment_methods: {
@@ -133,7 +139,8 @@ export async function createPaymentIntent(req, res) {
         subtotal: subtotal.toFixed(2),
         discount: discount.toFixed(2),
         couponCode: couponCode || "",
-        totalPrice: total.toFixed(2),
+        totalPrice: total.toFixed(2), // Lưu VND trong metadata
+        totalUSD: totalUSD.toFixed(2),
       },
     });
 

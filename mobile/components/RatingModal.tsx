@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { formatVND } from "@/lib/utils";
 
 interface RatingModalProps {
   visible: boolean;
@@ -79,7 +80,7 @@ const RatingModal = ({
                             {item.name}
                           </Text>
                           <Text className="text-text-secondary text-xs mt-1">
-                            Số lượng: {item.quantity} • ${item.price.toFixed(2)}
+                            Số lượng: {item.quantity} • {formatVND(item.price)}
                           </Text>
                         </View>
                       </View>

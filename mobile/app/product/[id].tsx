@@ -18,6 +18,7 @@ import {
   TextInput,
 } from "react-native";
 import { useComments, useCreateComment } from "@/hooks/useComments";
+import { formatVND } from "@/lib/utils";
 
 const { width } = Dimensions.get("window");
 
@@ -210,7 +211,7 @@ const ProductDetailScreen = () => {
             </View>
 
             <Text className="text-primary text-4xl font-bold mb-6">
-              ${product.price.toFixed(2)}
+              {formatVND(product.price)}
             </Text>
 
             {/* Quantity */}
@@ -333,7 +334,7 @@ const ProductDetailScreen = () => {
                 Tổng tiền
               </Text>
               <Text className="text-primary text-2xl font-bold">
-                ${(product.price * quantity).toFixed(2)}
+                {formatVND(product.price * quantity)}
               </Text>
             </View>
 

@@ -1,4 +1,5 @@
 import { View, Text } from "react-native";
+import { formatVND } from "@/lib/utils";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -25,7 +26,7 @@ export default function OrderSummary({
           <View className="flex-row justify-between items-center">
             <Text className="text-text-secondary text-base">Tạm tính</Text>
             <Text className="text-text-primary font-semibold text-base">
-              ${subtotal.toFixed(2)}
+              {formatVND(subtotal)}
             </Text>
           </View>
 
@@ -35,7 +36,7 @@ export default function OrderSummary({
               Phí vận chuyển
             </Text>
             <Text className="text-text-primary font-semibold text-base">
-              ${shipping.toFixed(2)}
+              {formatVND(shipping)}
             </Text>
           </View>
 
@@ -46,7 +47,7 @@ export default function OrderSummary({
                 Giảm giá
               </Text>
               <Text className="text-green-500 font-semibold text-base">
-                -${discount.toFixed(2)}
+                -{formatVND(discount)}
               </Text>
             </View>
           )}
@@ -60,7 +61,7 @@ export default function OrderSummary({
               Tổng cộng
             </Text>
             <Text className="text-primary font-bold text-2xl">
-              ${total.toFixed(2)}
+              {formatVND(total)}
             </Text>
           </View>
         </View>

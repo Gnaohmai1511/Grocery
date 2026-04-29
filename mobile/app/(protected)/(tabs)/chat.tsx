@@ -18,6 +18,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { formatVND } from "@/lib/utils";
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -124,7 +125,7 @@ setMessages((prev) => [
     </Text>
 
     <Text className="text-primary font-bold">
-      ${product.price}
+      {formatVND(product.price)}
     </Text>
   </TouchableOpacity>
 ))}

@@ -23,3 +23,10 @@ export const getStatusColor = (status: string) => {
       return "#666";
   }
 };
+
+export const formatVND = (price: number) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+};

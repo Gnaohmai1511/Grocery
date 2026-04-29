@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Product } from "@/types";
+import { formatVND } from "@/lib/utils";
 type TopProduct = {
   _id: string;
   name: string;
@@ -186,7 +187,7 @@ const ShopScreen = () => {
         </Text>
 
         <Text className="text-primary font-bold mt-1">
-          ${product.price}
+          {formatVND(product.price)}
         </Text>
 
         <Text className="text-xs text-gray-500">
@@ -222,7 +223,7 @@ const ShopScreen = () => {
                   </Text>
 
                   <Text className="text-primary font-bold mt-1">
-                    ${product.price}
+                    {formatVND(product.price)}
                   </Text>
                 </TouchableOpacity>
               ))}

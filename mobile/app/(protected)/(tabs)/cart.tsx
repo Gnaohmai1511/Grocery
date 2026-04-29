@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import OrderSummary from "@/components/OrderSummary";
 import AddressSelectionModal from "@/components/AddressSelectionModal";
+import { formatVND } from "@/lib/utils";
 
 const CartScreen = () => {
   const api = useApi();
@@ -46,7 +47,7 @@ const CartScreen = () => {
 
   const cartItems = cart?.items || [];
   const subtotal = cartTotal;
-  const shipping = 10.0;
+  const shipping = 20000; // VND
   const total = subtotal + shipping - discount;
 
   const handleQuantityChange = (
@@ -192,10 +193,10 @@ const CartScreen = () => {
 
                     <View className="flex-row items-center mt-2">
                       <Text className="text-primary font-bold text-2xl">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        {formatVND(item.product.price * item.quantity)}
                       </Text>
                       <Text className="text-text-secondary text-sm ml-2">
-                        ${item.product.price.toFixed(2)} / sản phẩm
+                        {formatVND(item.product.price)} / sản phẩm
                       </Text>
                     </View>
                   </View>
@@ -343,7 +344,7 @@ const CartScreen = () => {
             </Text>
           </View>
           <Text className="text-text-primary font-bold text-xl">
-            ${total.toFixed(2)}
+            {formatVND(total)}
           </Text>
         </View>
 

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { formatVND } from "@/lib/utils";
 
 interface ProductsGridProps {
   isLoading: boolean;
@@ -107,7 +108,7 @@ const ProductsGrid = ({ products, isLoading, isError }: ProductsGridProps) => {
 
         <View className="flex-row items-center justify-between">
           <Text className="text-primary font-bold text-lg">
-            ${product.price.toFixed(2)}
+            {formatVND(product.price)}
           </Text>
 
           <TouchableOpacity

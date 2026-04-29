@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { formatVND } from "@/lib/utils";
 
 function WishlistScreen() {
   const { wishlist, isLoading, isError, removeFromWishlist, isRemovingFromWishlist } =
