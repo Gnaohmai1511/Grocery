@@ -10,6 +10,7 @@ import {
   capitalizeText,
   formatDate,
   getOrderStatusBadge,
+  formatVND,
 } from "../lib/utils";
 
 import RevenueChart from "../components/RevenueChart";
@@ -49,7 +50,7 @@ function DashboardPage() {
       name: "Tổng doanh thu",
       value: statsLoading
         ? "..."
-        : `${statsData?.totalRevenue?.toLocaleString()} `,
+        : formatVND(statsData?.totalRevenue),
       icon: <DollarSignIcon className="size-8" />,
     },
     {
@@ -144,7 +145,7 @@ function DashboardPage() {
                       </td>
 
                       <td className="font-semibold">
-                        {order.totalPrice.toLocaleString()} ₫
+                        {formatVND(order.totalPrice)}
                       </td>
 
                       <td>

@@ -5,6 +5,7 @@ import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
 import { Coupon } from "../models/coupon.model.js";
 import { Banner } from "../models/banner.model.js";
+import { convertUSDtoVND } from "../services/exchange.service.js";
 
 /* ================= CREATE PRODUCT ================= */
 export async function createProduct(req, res) {
@@ -228,7 +229,18 @@ export async function getDashboardStats(_, res) {
       { $group: { _id: null, total: { $sum: "$totalPrice" } } },
     ]);
 
-    const totalRevenue = revenueResult[0]?.total || 0;
+    const totalRevenueUSD = revenueResult[0]?.total || 0;
+
+    // Chuyển đổi từ USD sang VND theo tỉ giá hiện tại từ API
+    let totalRevenue = 0;
+    try {
+      const vndPerUsd = await convertUSDtoVND(1);
+      totalRevenue = totalRevenueUSD * vndPerUsd;
+      console.log(`✅ Tỉ giá: 1 USD = ${vndPerUsd} VND`);
+    } catch (error) {
+      console.error("❌ Lỗi lấy tỉ giá, sử dụng tỉ giá mặc định:", error);
+      totalRevenue = totalRevenueUSD * 23500; // Tỉ giá mặc định
+    }
 
     const totalCustomers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
@@ -360,8 +372,17 @@ export async function getRevenueLast7Days(_, res) {
       },
     ]);
 
+    // Lấy tỉ giá USD/VND từ API
+    let vndPerUsd = 23500; // Tỉ giá mặc định
+    try {
+      vndPerUsd = await convertUSDtoVND(1);
+      console.log(`✅ Tỉ giá: 1 USD = ${vndPerUsd} VND`);
+    } catch (error) {
+      console.error("❌ Lỗi lấy tỉ giá, sử dụng tỉ giá mặc định:", error);
+    }
+
     const map = {};
-    revenue.forEach((r) => (map[r._id] = r.revenue));
+    revenue.forEach((r) => (map[r._id] = r.revenue * vndPerUsd));
 
     res.json(last7Days.map((d) => ({ date: d, revenue: map[d] || 0 })));
   } catch {

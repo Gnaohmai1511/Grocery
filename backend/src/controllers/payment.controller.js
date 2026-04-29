@@ -7,11 +7,9 @@ import { Cart } from "../models/cart.model.js";
 import { Coupon } from "../models/coupon.model.js";
 import { CouponUsage } from "../models/couponUsage.model.js";
 import mongoose from "mongoose";
+import { convertVNDtoUSD, getUSDtoVNDRate } from "../services/exchange.service.js";
 
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
-
-// Tỉ giá VND sang USD (ước tính hiện tại)
-const VND_TO_USD_RATE = 23500;
 
 export async function createPaymentIntent(req, res) {
   try {
@@ -101,8 +99,17 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    // Chuyển đổi từ VND sang USD cho Stripe
-    const totalUSD = total / VND_TO_USD_RATE;
+    // Lấy tỉ giá USD/VND từ API và chuyển đổi VND sang USD cho Stripe
+    let totalUSD = 0;
+    let exchangeRate = 23500; // Tỉ giá mặc định
+    try {
+      exchangeRate = await getUSDtoVNDRate();
+      totalUSD = total / exchangeRate;
+      console.log(`✅ Tỉ giá: 1 USD = ${exchangeRate} VND | ${total} VND = ${totalUSD} USD`);
+    } catch (error) {
+      console.error("❌ Lỗi lấy tỉ giá, sử dụng tỉ giá mặc định:", error);
+      totalUSD = total / 23500;
+    }
 
     // ===== STRIPE CUSTOMER =====
     let customer;
@@ -139,8 +146,9 @@ export async function createPaymentIntent(req, res) {
         subtotal: subtotal.toFixed(2),
         discount: discount.toFixed(2),
         couponCode: couponCode || "",
-        totalPrice: total.toFixed(2), // Lưu VND trong metadata
-        totalUSD: totalUSD.toFixed(2),
+        totalPrice: total.toFixed(2), // Giá VND
+        totalUSD: totalUSD.toFixed(2), // Giá USD
+        exchangeRate: exchangeRate.toString(), // Tỉ giá sử dụng
       },
     });
 

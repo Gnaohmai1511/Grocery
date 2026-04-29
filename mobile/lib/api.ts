@@ -3,6 +3,7 @@ import axios from "axios";
 import { useEffect } from "react";
 
 const API_URL = "https://grocery-cdim.onrender.com/api"
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
