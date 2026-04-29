@@ -10,24 +10,19 @@ import mongoose from "mongoose";
 
 const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
 
-// ⚠️ Tỷ giá tạm (nên thay bằng API sau)
-const VND_TO_USD_RATE = 1 / 24000;
-
-function convertVNDToUSD(amountVND) {
-  return amountVND * VND_TO_USD_RATE;
-}
-
 export async function createPaymentIntent(req, res) {
   try {
     const { cartItems, shippingAddress, couponCode } = req.body;
     const user = req.user;
 
+    // Kiểm tra giỏ hàng
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({
         error: "Giỏ hàng đang trống",
       });
     }
 
+    // Tính tổng tiền phía server (không tin client)
     let subtotal = 0;
     const validatedItems = [];
 
@@ -57,10 +52,10 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    const shipping = 10000; // ⚠️ đổi về VND (ví dụ 10k)
+    const shipping = 10.0; // phí vận chuyển
     let discount = 0;
 
-    // ===== COUPON =====
+    // ===== XỬ LÝ COUPON =====
     if (couponCode) {
       const coupon = await Coupon.findOne({
         code: couponCode.toUpperCase(),
@@ -73,6 +68,7 @@ export async function createPaymentIntent(req, res) {
         });
       }
 
+      // Kiểm tra user đã dùng coupon chưa
       const used = await CouponUsage.findOne({
         user: user._id,
         coupon: coupon._id,
@@ -94,16 +90,13 @@ export async function createPaymentIntent(req, res) {
       }
     }
 
-    const totalVND = subtotal + shipping - discount;
+    const total = subtotal + shipping - discount;
 
-    if (totalVND <= 0) {
+    if (total <= 0) {
       return res.status(400).json({
         error: "Tổng đơn hàng không hợp lệ",
       });
     }
-
-    // ===== CONVERT USD =====
-    const totalUSD = convertVNDToUSD(totalVND);
 
     // ===== STRIPE CUSTOMER =====
     let customer;
@@ -124,9 +117,9 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    // ===== PAYMENT INTENT =====
+    // ===== CREATE PAYMENT INTENT =====
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalUSD * 100), // USD → cents
+      amount: Math.round(total * 100),
       currency: "usd",
       customer: customer.id,
       automatic_payment_methods: {
@@ -137,11 +130,10 @@ export async function createPaymentIntent(req, res) {
         userId: user._id.toString(),
         orderItems: JSON.stringify(validatedItems),
         shippingAddress: JSON.stringify(shippingAddress),
-        subtotalVND: subtotal.toString(),
-        discountVND: discount.toString(),
-        totalVND: totalVND.toString(),
-        totalUSD: totalUSD.toFixed(2),
+        subtotal: subtotal.toFixed(2),
+        discount: discount.toFixed(2),
         couponCode: couponCode || "",
+        totalPrice: total.toFixed(2),
       },
     });
 
@@ -180,9 +172,8 @@ export async function handleWebhook(req, res) {
         clerkId,
         orderItems,
         shippingAddress,
-        totalUSD,
-        totalVND,
-        discountVND,
+        totalPrice,
+        discount,
         couponCode,
       } = paymentIntent.metadata;
 
@@ -205,20 +196,19 @@ export async function handleWebhook(req, res) {
           id: paymentIntent.id,
           status: "succeeded",
         },
-        totalPriceUSD: Number(totalUSD),
-        totalPriceVND: Number(totalVND),
-        discount: Number(discountVND || 0),
+        discount: Number(discount || 0),
         couponCode,
+        totalPrice: Number(totalPrice),
       });
 
-      // ===== TRỪ KHO =====
+      // Cập nhật tồn kho
       for (const item of JSON.parse(orderItems)) {
         await Product.findByIdAndUpdate(item.product, {
           $inc: { stock: -item.quantity },
         });
       }
 
-      // ===== GHI NHẬN COUPON =====
+      // ===== GHI NHẬN COUPON ĐÃ DÙNG =====
       const normalizedCouponCode =
         typeof couponCode === "string"
           ? couponCode.trim().toUpperCase()
