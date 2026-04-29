@@ -48,7 +48,7 @@ export const askAI = async (req, res) => {
     ========================= */
 
     const user = await User.findOne({ clerkId });
-    const orders = await Order.find({ clerkId }).limit(3);
+    const orders = await Order.find({ clerkId });
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
 
     // ✅ 3 sản phẩm mới nhất
@@ -188,7 +188,8 @@ hãy yêu cầu người dùng nói rõ tên sản phẩm.
 
 === THÔNG TIN NGƯỜI DÙNG ===
 Email: ${user?.email || "Guest"}
-Số đơn hàng gần đây: ${orders.length}
+Tên: ${user?.name || "Khách"}
+Số đơn hàng: ${orders.length}
 Số sản phẩm trong giỏ: ${cart?.items?.length || 0}
 
 === 3 SẢN PHẨM MỚI NHẤT ===
