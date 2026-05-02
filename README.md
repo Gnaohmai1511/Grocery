@@ -169,7 +169,7 @@ npm run dev
 ### Mobile app
 ```bash
 cd mobile
-npm start
+npx expo
 ```
 
 ## Biến môi trường
