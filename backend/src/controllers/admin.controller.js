@@ -225,22 +225,17 @@ export async function getDashboardStats(_, res) {
   try {
     const totalOrders = await Order.countDocuments();
 
-    const revenueResult = await Order.aggregate([
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+   const revenueResult = await Order.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalPrice" },
+        },
+      },
     ]);
 
-    const totalRevenueUSD = revenueResult[0]?.total || 0;
+    const totalRevenue = revenueResult[0]?.total || 0;
 
-    // Chuyển đổi từ USD sang VND theo tỉ giá hiện tại từ API
-    let totalRevenue = 0;
-    try {
-      const vndPerUsd = await convertUSDtoVND(1);
-      totalRevenue = totalRevenueUSD * vndPerUsd;
-      console.log(`✅ Tỉ giá: 1 USD = ${vndPerUsd} VND`);
-    } catch (error) {
-      console.error("❌ Lỗi lấy tỉ giá, sử dụng tỉ giá mặc định:", error);
-      totalRevenue = totalRevenueUSD * 23500; // Tỉ giá mặc định
-    }
 
     const totalCustomers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
