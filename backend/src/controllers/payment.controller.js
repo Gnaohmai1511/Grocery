@@ -53,7 +53,7 @@ export async function createPaymentIntent(req, res) {
       });
     }
 
-    const shipping = 20000; // phí vận chuyển VND (khoảng 10 USD)
+    const shipping = 20000; 
     let discount = 0;
 
     // ===== XỬ LÝ COUPON =====
@@ -193,68 +193,107 @@ export async function handleWebhook(req, res) {
       } = paymentIntent.metadata;
 
       const userObjectId = new mongoose.Types.ObjectId(userId);
+      const session = await mongoose.startSession();
+      let order = null;
 
-      const existingOrder = await Order.findOne({
-        "paymentResult.id": paymentIntent.id,
-      });
+      try {
+        const transactionOptions = {
+          readConcern: { level: "snapshot" }, // Isolation level: snapshot để tránh dirty reads
+          writeConcern: { w: "majority" }, // Đảm bảo durability
+        };
 
-      if (existingOrder) {
-        return res.json({ received: true });
-      }
-
-      const order = await Order.create({
-        user: userObjectId,
-        clerkId: clerkId,
-        orderItems: JSON.parse(orderItems),
-        shippingAddress: JSON.parse(shippingAddress),
-        paymentResult: {
-          id: paymentIntent.id,
-          status: "succeeded",
-        },
-        discount: Number(discount || 0),
-        couponCode,
-        totalPrice: Number(totalPrice),
-      });
-
-      // Cập nhật tồn kho
-      for (const item of JSON.parse(orderItems)) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity },
-        });
-      }
-
-      // ===== GHI NHẬN COUPON ĐÃ DÙNG =====
-      const normalizedCouponCode =
-        typeof couponCode === "string"
-          ? couponCode.trim().toUpperCase()
-          : null;
-
-      if (normalizedCouponCode) {
-        const coupon = await Coupon.findOne({
-          code: normalizedCouponCode,
-          isActive: true,
-        });
-
-        if (coupon) {
+        await session.withTransaction(async () => {
           try {
-            await CouponUsage.create({
-              user: userObjectId,
-              coupon: coupon._id,
-            });
+            const existingOrder = await Order.findOne({
+              "paymentResult.id": paymentIntent.id,
+            })
+              .session(session)
+              .exec();
 
-            await Coupon.findByIdAndUpdate(coupon._id, {
-              $inc: { usedCount: 1 },
-            });
+            if (existingOrder) {
+              return;
+            }
 
-            console.log("✅ Đã ghi nhận coupon đã sử dụng");
-          } catch (err) {
-            if (err.code !== 11000) throw err;
-            console.log("⚠️ Coupon đã được ghi nhận trước đó");
+            const parsedOrderItems = JSON.parse(orderItems);
+
+            [order] = await Order.create(
+              [
+                {
+                  user: userObjectId,
+                  clerkId: clerkId,
+                  orderItems: parsedOrderItems,
+                  shippingAddress: JSON.parse(shippingAddress),
+                  paymentResult: {
+                    id: paymentIntent.id,
+                    status: "succeeded",
+                  },
+                  discount: Number(discount || 0),
+                  couponCode,
+                  totalPrice: Number(totalPrice),
+                },
+              ],
+              { session }
+            );
+
+            for (const item of parsedOrderItems) {
+              await Product.findByIdAndUpdate(
+                item.product,
+                { $inc: { stock: -item.quantity } },
+                { session }
+              );
+            }
+
+            const normalizedCouponCode =
+              typeof couponCode === "string"
+                ? couponCode.trim().toUpperCase()
+                : null;
+
+            if (normalizedCouponCode) {
+              const coupon = await Coupon.findOne({
+                code: normalizedCouponCode,
+                isActive: true,
+              })
+                .session(session)
+                .exec();
+
+              if (coupon) {
+                try {
+                  await CouponUsage.create(
+                    [
+                      {
+                        user: userObjectId,
+                        coupon: coupon._id,
+                      },
+                    ],
+                    { session }
+                  );
+
+                  await Coupon.findByIdAndUpdate(
+                    coupon._id,
+                    { $inc: { usedCount: 1 } },
+                    { session }
+                  );
+
+                  console.log("✅ Đã ghi nhận coupon đã sử dụng");
+                } catch (err) {
+                  if (err.code !== 11000) throw err;
+                  console.log("⚠️ Coupon đã được ghi nhận trước đó");
+                }
+              }
+            }
+          } catch (innerError) {
+            console.error("Lỗi trong transaction, rollback:", innerError);
+            await session.abortTransaction(); // Rollback transaction thủ công nếu cần
+            throw innerError; // Re-throw để withTransaction xử lý
           }
-        }
+        }, transactionOptions);
+      } finally {
+        session.endSession();
       }
 
-      console.log("✅ Đơn hàng được tạo:", order._id);
+      if (order) {
+        console.log("✅ Đơn hàng được tạo:", order._id);
+      }
     } catch (error) {
       console.error("Lỗi xử lý webhook đơn hàng:", error);
     }
