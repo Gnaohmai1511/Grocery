@@ -198,8 +198,8 @@ export async function handleWebhook(req, res) {
 
       try {
         const transactionOptions = {
-          readConcern: { level: "snapshot" }, // Isolation level: snapshot để tránh dirty reads
-          writeConcern: { w: "majority" }, // Đảm bảo durability
+          readConcern: { level: "snapshot" }, 
+          writeConcern: { w: "majority" }, 
         };
 
         await session.withTransaction(async () => {
@@ -236,11 +236,23 @@ export async function handleWebhook(req, res) {
             );
 
             for (const item of parsedOrderItems) {
-              await Product.findByIdAndUpdate(
-                item.product,
+              const updatedProduct = await Product.findOneAndUpdate(
+                {
+                  _id: item.product,
+                  stock: { $gte: item.quantity },
+                },
                 { $inc: { stock: -item.quantity } },
-                { session }
+                {
+                  session,
+                  new: true,
+                }
               );
+
+              if (!updatedProduct) {
+                throw new Error(
+                  `Sản phẩm ${item.name || item.product} không đủ tồn kho để đặt ${item.quantity} cái`
+                );
+              }
             }
 
             const normalizedCouponCode =
@@ -283,8 +295,8 @@ export async function handleWebhook(req, res) {
             }
           } catch (innerError) {
             console.error("Lỗi trong transaction, rollback:", innerError);
-            await session.abortTransaction(); // Rollback transaction thủ công nếu cần
-            throw innerError; // Re-throw để withTransaction xử lý
+            await session.abortTransaction();
+            throw innerError; 
           }
         }, transactionOptions);
       } finally {

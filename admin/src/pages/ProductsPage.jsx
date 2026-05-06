@@ -253,6 +253,7 @@ function ProductsPage() {
                   <option value="Accessories">Phụ kiện</option>
                   <option value="Fashion">Thời trang</option>
                   <option value="Sports">Thể thao</option>
+                  <option value="Books">Sách</option>
                 </select>
               </div>
             </div>
