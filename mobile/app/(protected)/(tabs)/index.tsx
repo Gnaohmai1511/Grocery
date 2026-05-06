@@ -31,10 +31,10 @@ type TopProduct = {
 
 const CATEGORIES = [
   { name: "All", icon: "grid-outline" as const },
-  { name: "Electronics", image: require("@/assets/images/electronics.png") },
-  { name: "Fashion", image: require("@/assets/images/fashion.png") },
-  { name: "Sports", image: require("@/assets/images/sports.png") },
-  { name: "Books", image: require("@/assets/images/books.png") },
+  { name: "Điện tử", image: require("@/assets/images/electronics.png") },
+  { name: "Thời trang", image: require("@/assets/images/fashion.png") },
+  { name: "Thể thao", image: require("@/assets/images/sports.png") },
+  { name: "Sách", image: require("@/assets/images/books.png") },
 ];
 
 const ShopScreen = () => {
