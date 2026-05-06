@@ -249,11 +249,11 @@ function ProductsPage() {
                   required
                 >
                   <option value="">Chọn danh mục</option>
-                  <option value="Electronics">Điện tử</option>
-                  <option value="Accessories">Phụ kiện</option>
-                  <option value="Fashion">Thời trang</option>
-                  <option value="Sports">Thể thao</option>
-                  <option value="Books">Sách</option>
+                  <option value="Điện tử">Điện tử</option>
+                  <option value="Phụ kiện">Phụ kiện</option>
+                  <option value="Thời trang">Thời trang</option>
+                  <option value="Thể thao">Thể thao</option>
+                  <option value="Sách">Sách</option>
                 </select>
               </div>
             </div>
