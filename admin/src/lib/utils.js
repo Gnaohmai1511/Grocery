@@ -17,9 +17,9 @@ export const getOrderStatusBadge = (status) => {
 };
 
 export const getStockStatusBadge = (stock) => {
-  if (stock === 0) return { text: "Out of Stock", class: "badge-error" };
-  if (stock < 20) return { text: "Low Stock", class: "badge-warning" };
-  return { text: "In Stock", class: "badge-success" };
+  if (stock === 0) return { text: "Hết hàng", class: "badge-error" };
+  if (stock < 20) return { text: "Tồn kho thấp", class: "badge-warning" };
+  return { text: "Còn hàng", class: "badge-success" };
 };
 
 export const formatDate = (dateString) => {
