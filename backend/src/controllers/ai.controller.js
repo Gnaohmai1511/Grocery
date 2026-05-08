@@ -51,12 +51,10 @@ export const askAI = async (req, res) => {
     const orders = await Order.find({ clerkId });
     const cart = await Cart.findOne({ clerkId }).populate("items.product");
 
-    // ✅ 3 sản phẩm mới nhất
     const latestProducts = await Product.find()
       .sort({ createdAt: -1 })
       .limit(3);
 
-    // ✅ tất cả sản phẩm
     const allProducts = await Product.find();
 
     /* =========================
@@ -147,7 +145,7 @@ export const askAI = async (req, res) => {
     ]);
 
     /* =========================
-       SYSTEM PROMPT (UPDATED)
+       SYSTEM PROMPT
     ========================= */
 
     const systemPrompt = `
@@ -225,24 +223,55 @@ ${topProducts
 `;
 
     /* =========================
-       GỌI GEMINI
+       GỌI GEMINI + FALLBACK
     ========================= */
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    let model;
+    const models = [
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-1.5-flash",
+    ];
 
-    try {
-      model = genAI.getGenerativeModel({
-        model: "gemini-2.5-pro",
-      });
-    } catch {
-      model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
-      });
+    let result = null;
+    let lastError = null;
+
+    for (const modelName of models) {
+      try {
+        console.log("Trying model:", modelName);
+
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+        });
+
+        result = await model.generateContent(systemPrompt);
+
+        console.log("SUCCESS MODEL:", modelName);
+
+        break;
+      } catch (err) {
+        console.error("MODEL FAILED:", modelName, err.message);
+
+        lastError = err;
+
+        const message = err.message?.toLowerCase() || "";
+
+        const isHighDemand =
+          message.includes("overloaded") ||
+          message.includes("high demand") ||
+          message.includes("503") ||
+          message.includes("unavailable");
+
+        if (!isHighDemand) {
+          throw err;
+        }
+      }
     }
 
-    const result = await model.generateContent(systemPrompt);
+    if (!result) {
+      throw lastError || new Error("Không có model nào hoạt động");
+    }
 
     const answer = result.response.text().trim();
 
