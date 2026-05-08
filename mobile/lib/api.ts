@@ -2,8 +2,8 @@ import { useAuth } from "@clerk/clerk-expo";
 import axios from "axios";
 import { useEffect } from "react";
 
-const API_URL = "https://grocery-cdim.onrender.com/api"
-
+//const API_URL = "https://grocery-cdim.onrender.com/api"
+const API_URL = "http://192.168.1.112:5000/api";
 const api = axios.create({
   baseURL: API_URL,
   headers: {

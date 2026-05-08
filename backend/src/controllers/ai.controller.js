@@ -230,9 +230,17 @@ ${topProducts
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
-    });
+    let model;
+
+    try {
+      model = genAI.getGenerativeModel({
+        model: "gemini-2.5-pro",
+      });
+    } catch {
+      model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+      });
+    }
 
     const result = await model.generateContent(systemPrompt);
 
